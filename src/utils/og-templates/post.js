@@ -1,7 +1,7 @@
 import satori from "satori";
 // import { html } from "satori-html";
 import { SITE } from "@/config";
-import loadGoogleFonts from "../loadGoogleFont";
+import loadLocalFonts from "../loadGoogleFont";
 
 // const markup = html`<div
 //       style={{
@@ -55,7 +55,8 @@ import loadGoogleFonts from "../loadGoogleFont";
 //           <p
 //             style={{
 //               fontSize: 72,
-//               fontWeight: "bold",
+//               fontFamily: "Noto Sans CJK",
+//               fontWeight: 700,
 //               maxHeight: "84%",
 //               overflow: "hidden",
 //             }}
@@ -80,12 +81,24 @@ import loadGoogleFonts from "../loadGoogleFont";
 //               >
 //                 "
 //               </span>
-//               <span style={{ overflow: "hidden", fontWeight: "bold" }}>
+//               <span
+//                 style={{
+//                   overflow: "hidden",
+//                   fontFamily: "Noto Sans CJK",
+//                   fontWeight: 700,
+//                 }}
+//               >
 //                 {post.data.author}
 //               </span>
 //             </span>
 
-//             <span style={{ overflow: "hidden", fontWeight: "bold" }}>
+//             <span
+//               style={{
+//                 overflow: "hidden",
+//                 fontFamily: "Noto Sans CJK",
+//                 fontWeight: 700,
+//               }}
+//             >
 //               {SITE.title}
 //             </span>
 //           </div>
@@ -100,6 +113,7 @@ export default async post => {
       props: {
         style: {
           background: "#fefbfb",
+          fontFamily: "Noto Sans CJK",
           width: "100%",
           height: "100%",
           display: "flex",
@@ -156,7 +170,8 @@ export default async post => {
                       props: {
                         style: {
                           fontSize: 72,
-                          fontWeight: "bold",
+                          fontFamily: "Noto Sans CJK",
+                          fontWeight: 700,
                           maxHeight: "84%",
                           overflow: "hidden",
                         },
@@ -191,7 +206,8 @@ export default async post => {
                                   props: {
                                     style: {
                                       overflow: "hidden",
-                                      fontWeight: "bold",
+                                      fontFamily: "Noto Sans CJK",
+                                      fontWeight: 700,
                                     },
                                     children: post.data.author,
                                   },
@@ -202,7 +218,11 @@ export default async post => {
                           {
                             type: "span",
                             props: {
-                              style: { overflow: "hidden", fontWeight: "bold" },
+                              style: {
+                                overflow: "hidden",
+                                fontFamily: "Noto Sans CJK",
+                                fontWeight: 700,
+                              },
                               children: SITE.title,
                             },
                           },
@@ -221,9 +241,7 @@ export default async post => {
       width: 1200,
       height: 630,
       embedFont: true,
-      fonts: await loadGoogleFonts(
-        post.data.title + post.data.author + SITE.title + "by"
-      ),
+      fonts: await loadLocalFonts(),
     }
   );
 };

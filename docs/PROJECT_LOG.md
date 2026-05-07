@@ -69,3 +69,9 @@
 - 用户已在 GitHub 添加 Deploy key 并允许写入。
 - 已成功推送到 GitHub：`ff585ac Initialize Chinese developer blog`。
 - 推送后立即访问线上站点仍是旧版，判断 Cloudflare Pages 尚未完成或尚未触发最新部署，需要稍后复查部署结果。
+
+### 内容研究与草稿
+
+- 子 Agent 新增 `docs/CONTENT_INBOX.md`，整理 AI 自动化 / MCP / n8n / OpenClaw / Cloudflare Agents 线索与 12 个后续选题。
+- 子 Agent 新增草稿 `src/data/blog/ai-automation/openclaw-auto-blog.md`，保持 `draft: true`，未发布。
+- 发现 OG 图片生成仍会请求 Google Fonts，可能导致构建超时；已改为优先使用本机 Noto Sans CJK / fallback 字体，避免构建阶段依赖远程字体。

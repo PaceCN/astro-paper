@@ -1,62 +1,42 @@
-async function loadGoogleFont(
-  font: string,
-  text: string,
-  weight: number
-): Promise<ArrayBuffer> {
-  const API = `https://fonts.googleapis.com/css2?family=${font}:wght@${weight}&text=${encodeURIComponent(text)}`;
+import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 
-  const css = await (
-    await fetch(API, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1",
-      },
-    })
-  ).text();
+const LOCAL_FONT_CANDIDATES = [
+  // Satori does not support TTC collections; use TTF/OTF fonts only.
+  "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+  "/usr/share/fonts/opentype/unifont/unifont.otf",
+  "/usr/share/fonts/opentype/urw-base35/NimbusSans-Regular.otf",
+];
 
-  const resource = css.match(
-    /src: url\((.+?)\) format\('(opentype|truetype)'\)/
-  );
+const LOCAL_BOLD_FONT_CANDIDATES = [
+  "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+  "/usr/share/fonts/opentype/unifont/unifont.otf",
+  "/usr/share/fonts/opentype/urw-base35/NimbusSans-Bold.otf",
+];
 
-  if (!resource) throw new Error("Failed to download dynamic font");
+async function readFirstExistingFont(paths: string[]): Promise<ArrayBuffer> {
+  const path = paths.find(existsSync);
 
-  const res = await fetch(resource[1]);
-
-  if (!res.ok) {
-    throw new Error("Failed to download dynamic font. Status: " + res.status);
+  if (!path) {
+    throw new Error(`No local font found. Checked: ${paths.join(", ")}`);
   }
 
-  return res.arrayBuffer();
+  const buffer = await readFile(path);
+  return new Uint8Array(buffer).slice().buffer;
 }
 
-async function loadGoogleFonts(
-  text: string
-): Promise<
+async function loadLocalFonts(): Promise<
   Array<{ name: string; data: ArrayBuffer; weight: number; style: string }>
 > {
-  const fontsConfig = [
-    {
-      name: "IBM Plex Mono",
-      font: "IBM+Plex+Mono",
-      weight: 400,
-      style: "normal",
-    },
-    {
-      name: "IBM Plex Mono",
-      font: "IBM+Plex+Mono",
-      weight: 700,
-      style: "bold",
-    },
+  const [regular, bold] = await Promise.all([
+    readFirstExistingFont(LOCAL_FONT_CANDIDATES),
+    readFirstExistingFont(LOCAL_BOLD_FONT_CANDIDATES),
+  ]);
+
+  return [
+    { name: "Noto Sans CJK", data: regular, weight: 400, style: "normal" },
+    { name: "Noto Sans CJK", data: bold, weight: 700, style: "normal" },
   ];
-
-  const fonts = await Promise.all(
-    fontsConfig.map(async ({ name, font, weight, style }) => {
-      const data = await loadGoogleFont(font, text, weight);
-      return { name, data, weight, style };
-    })
-  );
-
-  return fonts;
 }
 
-export default loadGoogleFonts;
+export default loadLocalFonts;

@@ -1,6 +1,6 @@
 import satori from "satori";
 import { SITE } from "@/config";
-import loadGoogleFonts from "../loadGoogleFont";
+import loadLocalFonts from "../loadGoogleFont";
 
 export default async () => {
   return satori(
@@ -9,6 +9,7 @@ export default async () => {
       props: {
         style: {
           background: "#fefbfb",
+          fontFamily: "Noto Sans CJK",
           width: "100%",
           height: "100%",
           display: "flex",
@@ -77,7 +78,11 @@ export default async () => {
                           {
                             type: "p",
                             props: {
-                              style: { fontSize: 72, fontWeight: "bold" },
+                              style: {
+                                fontSize: 72,
+                                fontFamily: "Noto Sans CJK",
+                                fontWeight: 700,
+                              },
                               children: SITE.title,
                             },
                           },
@@ -104,7 +109,11 @@ export default async () => {
                         children: {
                           type: "span",
                           props: {
-                            style: { overflow: "hidden", fontWeight: "bold" },
+                            style: {
+                              overflow: "hidden",
+                              fontFamily: "Noto Sans CJK",
+                              fontWeight: 700,
+                            },
                             children: new URL(SITE.website).hostname,
                           },
                         },
@@ -122,7 +131,7 @@ export default async () => {
       width: 1200,
       height: 630,
       embedFont: true,
-      fonts: await loadGoogleFonts(SITE.title + SITE.desc + SITE.website),
+      fonts: await loadLocalFonts(),
     }
   );
 };
