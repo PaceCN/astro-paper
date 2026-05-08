@@ -75,3 +75,20 @@
 - 子 Agent 新增 `docs/CONTENT_INBOX.md`，整理 AI 自动化 / MCP / n8n / OpenClaw / Cloudflare Agents 线索与 12 个后续选题。
 - 子 Agent 新增草稿 `src/data/blog/ai-automation/openclaw-auto-blog.md`，保持 `draft: true`，未发布。
 - 发现 OG 图片生成仍会请求 Google Fonts，可能导致构建超时；已改为优先使用本机 Noto Sans CJK / fallback 字体，避免构建阶段依赖远程字体。
+
+### 每日自动化任务规划
+
+- 用户确认允许自动发布：`blog-agent` 搜集/初审，`main` agent 二审，通过后自动发布。
+- 计划新增独立 agent：`blog-agent`，workspace 指向本项目，避免长任务占用主会话。
+- 计划新增两个定时任务：北京时间 09:00 和 16:00。
+- 旧 08:00 GitHub 微信任务连续失败，原因是 `openclaw-weixin` channel 已不可用；将禁用旧任务，避免继续报错。
+
+### 自动化配置与测试结果
+
+- `blog-agent` 已注册为独立 agent，OpenClaw status 显示 Agents=2，heartbeat 对 `blog-agent` 禁用，避免占用主会话。
+- 已禁用旧 08:00 `github-trending-weixin-morning` 任务：原因是 `openclaw-weixin` channel/plugin stale，delivery unsupported，导致连续失败。
+- 已创建每日 09:00 任务：`pace-notes-morning-digest`，agent=`blog-agent`，isolated，timeout=1800s。
+- 已创建每日 16:00 任务：`pace-notes-afternoon-ai-tools`，agent=`blog-agent`，isolated，timeout=1800s。
+- 冒烟测试已运行：`blog-agent` 成功创建 `src/data/blog/ai-automation/test-automation-smoke.md`，保持 `draft: true`，未提交、未推送。
+- 冒烟测试后主会话复跑验证：`pnpm run format:check`、`pnpm run lint`、`pnpm run build` 均通过。
+- 仍有 OpenClaw 配置警告：`openclaw-weixin` 插件配置已 stale；旧任务已禁用，但后续建议清理 stale plugin/channel config 或重装插件。
