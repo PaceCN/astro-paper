@@ -92,3 +92,14 @@
 - 冒烟测试已运行：`blog-agent` 成功创建 `src/data/blog/ai-automation/test-automation-smoke.md`，保持 `draft: true`，未提交、未推送。
 - 冒烟测试后主会话复跑验证：`pnpm run format:check`、`pnpm run lint`、`pnpm run build` 均通过。
 - 仍有 OpenClaw 配置警告：`openclaw-weixin` 插件配置已 stale；旧任务已禁用，但后续建议清理 stale plugin/channel config 或重装插件。
+
+
+### 2026-05-09 定时任务未发布问题修复
+
+- 09:00 与 16:00 定时任务实际均已触发并生成草稿，但文章保持 `draft: true`，所以线上未显示。
+- 根因：`blog-agent` 尝试请求 `main` 二审，但当前隔离 cron session 无法调用/找到 main 审核会话，导致停在 `main_review`。
+- 已由 main 手动二审 2026-05-08 两篇草稿，并将其发布：
+  - `github-ai-daily-2026-05-08.md`
+  - `ai-tools-daily-2026-05-08.md`
+- 已修正后续流程：定时任务改为 `blog-agent` 自审 + format/lint/build 验证通过后自动发布，main 事后监督复查状态与线上结果，不再阻塞等待不可用的 main 子审。
+- 本次恢复验证：`pnpm run lint`、`pnpm run build` 均通过，已推送 commit `e71de1b`。
