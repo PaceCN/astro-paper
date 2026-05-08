@@ -1,7 +1,7 @@
 ---
 author: wx
 pubDatetime: 2026-05-08T16:00:00+08:00
-title: 2026-05-08 普通人可用AI工具速览
+title: 5 个今天就能上手的 AI 工具：生图、短视频和免费模型 API
 slug: ai-tools-daily-2026-05-08
 featured: false
 draft: false
@@ -11,10 +11,10 @@ tags:
   - AI生图
   - AI生视频
   - 免费模型
-description: 2026-05-08 下午速览：整理 5 个普通人今天就能尝试的 AI 生图、生视频、免费模型调用、浏览器助手与自动化模板。
+description: 这 5 个 AI 工具今天就能试：做图、生成短视频、调用免费模型 API、让浏览器帮你整理网页。
 ---
 
-今天这 5 条只选普通人能直接打开网页或注册使用的工具与方法。价格、额度和入口变化很快，下面按 2026-05-08 16:00 左右可查到的信息记录；真正付费前请再点进官方价格页确认一次。
+今天挑 5 个普通人能直接打开网页或注册试用的 AI 工具。重点不是追新名词，而是看它们能不能马上帮你做图、做短视频、接入模型 API，或者把浏览器和常用 App 里的重复动作省下来。价格和额度变化很快，付费前再看一眼官方价格页。
 
 ## 1. Adobe Firefly：适合做海报、封面和社媒配图的 AI 生图
 
@@ -23,7 +23,7 @@ description: 2026-05-08 下午速览：整理 5 个普通人今天就能尝试�
 - 它做什么：输入文字提示词生成图片；每次提示会给出 4 张候选图，还能继续相似生成、换风格、用 Generative Fill 做局部修改。
 - 为什么有用：对不会画图的人，Firefly 的优势是入口清晰，适合做公众号封面、活动海报、短视频背景、PPT 插图等不太复杂的视觉素材。
 - 成本 / 门槛：Adobe 帮助页说明，Firefly 和 Creative Cloud 相关功能会消耗 generative credits；不同订阅包含的月度额度不同，部分 Firefly / Creative Cloud Pro 方案对标准生成有更宽松的访问。Adobe 公开页面也提示可创建免费账号试用。
-- 注意点：地区可用性不完全一致，我在抓取时看到 Firefly 独立站点会因地区限制拒绝访问；如果本地打不开，可以优先看 Adobe 产品页或改用已登录的 Creative Cloud / Express 入口。
+- 注意点：地区可用性不完全一致，测试时发现 Firefly 独立站点可能会因地区限制拒绝访问；如果本地打不开，可以优先看 Adobe 产品页或改用已登录的 Creative Cloud / Express 入口。
 
 来源：
 
@@ -52,7 +52,7 @@ description: 2026-05-08 下午速览：整理 5 个普通人今天就能尝试�
 - URL：https://openrouter.ai/collections/free-models
 - 它做什么：用一个 OpenAI 兼容风格的 API 入口调用多家模型。免费模型集合中会展示零成本模型；`/api/v1/models` 也能看到模型价格、上下文长度和能力。
 - 为什么有用：想做个人脚本、Notion/飞书小助手、浏览器插件原型的人，不必一开始就分别申请很多厂商 API。可以先用 free 模型或很便宜的小模型验证流程，再换成付费模型。
-- 成本 / 门槛：OpenRouter 官方 free models 页面说明可访问免费 AI 模型；官方 Limits 文档说明可以用 `/api/v1/key` 查询 key 的 credits 与限制。我抓取 `/api/v1/models` 时，看到 20 多个 prompt 和 completion 价格为 0 的模型，也看到低价模型如 Gemini 3.1 Flash Lite、IBM Granite 4.1 8B 等。
+- 成本 / 门槛：OpenRouter 官方 free models 页面说明可访问免费 AI 模型；官方 Limits 文档说明可以用 `/api/v1/key` 查询 key 的 credits 与限制。测试 `/api/v1/models` 时，可以看到一些 prompt 和 completion 价格为 0 的模型，也能看到部分低价模型。
 - 注意点：免费模型通常有请求频率、每日次数、稳定性和模型下线风险；不要把隐私数据、客户资料或密钥直接塞进测试请求。官方 Limits 文档中的部分限制值以变量形式渲染，实际限额应以登录后台或 key 查询结果为准。
 
 来源：

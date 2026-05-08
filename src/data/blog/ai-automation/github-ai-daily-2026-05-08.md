@@ -1,7 +1,7 @@
 ---
 author: wx
 pubDatetime: 2026-05-08T09:00:00+08:00
-title: 2026-05-08 GitHub每日热点与AI资讯速览
+title: 今天 GitHub 上涨最快的 5 个 AI 项目，以及 3 条值得跟进的 AI 变化
 slug: github-ai-daily-2026-05-08
 featured: false
 draft: false
@@ -9,10 +9,10 @@ tags:
   - ai-automation
   - github每日热点
   - AI资讯
-description: 2026-05-08 早间速览：GitHub 升星最快项目，以及 OpenAI、Anthropic、GitHub Copilot 的 AI 最新资讯。
+description: 今天值得看的 GitHub 热点集中在 Agent、RAG 和工程自动化；AI 资讯则关系到云上 Agent、Claude Code 限额和 Copilot 计费。
 ---
 
-今天的 **github每日热点** 明显偏向 Agent、RAG、模型推理加速和企业后端。下面只保留可追溯来源的项目和资讯；星标数会随时间变化，按 2026-05-08 09:00 左右抓取记录。
+今天的 **github每日热点** 明显偏向 Agent、RAG、模型推理加速和企业后端。与其只看星标数字，更值得关注的是这些项目正在补齐 Agent 落地需要的外围能力：终端交互、技能包、行业模板、文档索引和流程工具。
 
 ## GitHub 每日热点 Top 5
 

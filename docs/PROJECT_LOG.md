@@ -103,3 +103,19 @@
   - `ai-tools-daily-2026-05-08.md`
 - 已修正后续流程：定时任务改为 `blog-agent` 自审 + format/lint/build 验证通过后自动发布，main 事后监督复查状态与线上结果，不再阻塞等待不可用的 main 子审。
 - 本次恢复验证：`pnpm run lint`、`pnpm run build` 均通过，已推送 commit `e71de1b`。
+
+
+### 2026-05-09 用户内容质量反馈
+
+- 用户指出当前博客列表和文章摘要存在“像任务说明/AI 批量内容”的问题。
+- 具体问题：`让技术博客覆盖服务器成本的现实路径` 这类战略复盘文章不应长期压在每日资讯上方；`2026-05-08 下午速览：整理 5 个...` 这类 description 太像内部任务说明，不像真人写给读者。
+- 已开始修正：更新 `BLOG_OPS.md` 和 `pace-notes-blog-automation` skill，加入标题、description、首段、人味表达、列表展示的发布前审查规则。
+- 已启动深度研究：SEO + AI 搜索/答案引擎收录 + 中文技术博客真人化写作规范，研究结论回来后继续固化到 docs 和 skill。
+
+
+### SEO/真人化写作规则落地
+
+- 子研究任务超时，未返回可用结论；main 直接基于 Google Search Central 等权威来源和用户反馈补充规则。
+- 新增 `docs/SEO_STYLE_GUIDE.md`，规定标题、description、首段、每日资讯结构、evergreen 文章、首页精选和去 AI 化检查。
+- 更新 `pace-notes-blog-automation` skill：发布前必须读取 SEO/真人化规则；禁止把 description 写成“整理/速览/综合 N 条”这类内部任务说明。
+- 修正 2026-05-08 两篇日报标题/description/首段，使其更像真人写给读者的内容。

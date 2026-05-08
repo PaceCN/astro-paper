@@ -23,6 +23,32 @@ This skill is for scheduled blog runs only. Long research/writing work runs insi
    - `corepack pnpm run lint`
    - `corepack pnpm run build`
 
+
+## Human-quality editorial gate
+
+Read `docs/SEO_STYLE_GUIDE.md` before publishing. Its rules override the templates below when wording conflicts.
+
+
+Before publishing, read the title, description, first 120 words, and post list preview as if you are a reader.
+
+Block publishing if any of these are true:
+
+- description sounds like an internal task: “整理/收集/综合 N 条/抓取时”.
+- title is generic and not search/use-case oriented.
+- first paragraph does not explain why the reader should care today.
+- article uses repetitive AI template phrasing.
+- article over-promises income, ranking, “free forever”, or model capability.
+- source links are present but the article gives no original judgement.
+
+Rewrite rules:
+
+- Use natural Chinese, short sentences, concrete nouns.
+- Put the reader benefit first.
+- Use dates for daily posts only when useful; keep the title meaningful without the date.
+- For daily AI tools, prefer: “今天这 5 个 AI 工具值得试：生图、短视频和免费模型 API”.
+- For GitHub/news, prefer: “今天 GitHub 上涨最快的 5 个 AI 项目，以及 3 条值得跟进的 AI 变化”.
+- `description` should be a reader-facing summary, never a task description.
+
 ## Status heartbeat
 
 At each stage, update `docs/AUTOMATION_STATUS.md`:
@@ -72,7 +98,7 @@ tags:
   - ai-automation
   - github每日热点
   - AI资讯
-description: 简短描述，说明包含 GitHub 升星最快项目与 AI 最新资讯。
+description: 面向读者的一句话摘要：今天 GitHub 哪些项目值得看，AI 领域哪几件事可能影响开发者；禁止写成“整理/速览/综合 N 条”。
 ---
 ```
 
@@ -106,7 +132,7 @@ tags:
   - AI生图
   - AI生视频
   - 免费模型
-description: 简短描述，说明包含生图、生视频、免费模型调用等普通人可直接尝试的工具和方法。
+description: 面向读者的一句话摘要：今天有哪些 AI 工具能直接上手，它们适合什么场景、有什么限制；禁止写成“整理/速览/综合 N 条”。
 ---
 ```
 
