@@ -7,12 +7,12 @@ description: Run Pace Notes scheduled blog automation: collect GitHub/AI hotspot
 
 Project root: `/home/pace/test-project-boke-google/astro-paper-main`.
 
-This skill is for scheduled blog runs only. It must keep long research/writing work inside an isolated `blog-agent` run, then request a separate `main` subagent review before publishing.
+This skill is for scheduled blog runs only. Long research/writing work runs inside isolated `blog-agent` cron sessions so the main conversation remains responsive. The user has authorized automatic publishing after strict self-review and validation; `main` supervises after runs by checking status, git history, and the published site.
 
 ## Hard rules
 
 1. Work only inside the project root.
-2. Never publish without review approval.
+2. Never publish without completing self-review and validation. User has pre-approved automatic publishing for scheduled daily digests.
 3. Keep source links for every news/tool item.
 4. Cross-check important claims with at least two sources when possible.
 5. Avoid gray/illegal items: leaked keys, piracy, credential abuse, open proxy dumps, exploit instructions.
@@ -117,21 +117,15 @@ description: 简短描述，说明包含生图、生视频、免费模型调用�
    - remove unsupported claims;
    - check duplicated items;
    - ensure each item has a source URL;
-   - keep `draft: true`.
-2. Request main-agent review with `sessions_spawn`:
-   - `agentId: "main"`
-   - `cwd: project root`
-   - isolated context
-   - ask reviewer to inspect the draft and source list only.
-   - reviewer must reply exactly one of:
-     - `APPROVED: <short reason>`
-     - `CHANGES_REQUIRED: <short list>`
-3. Publish only on `APPROVED`:
+   - keep `draft: true` until validation passes.
+2. Validate:
+   - run format/lint/build commands listed above;
+   - if any command fails, keep `draft: true`, write blocker to `docs/AUTOMATION_STATUS.md`, stop.
+3. Publish on successful self-review + validation:
    - set `draft: false`;
-   - run validation commands;
    - commit with message `Publish daily AI digest YYYY-MM-DD morning|afternoon`;
    - `git push origin main`.
-4. If review asks changes, revise once and request review once more. If still not approved, leave draft and stop.
+4. Main-agent supervision is post-run: main checks `docs/AUTOMATION_STATUS.md`, git history, and site output. Do not block on `sessions_spawn main`; isolated blog-agent jobs may not have permission to spawn main.
 
 ## Test mode
 
