@@ -1,8 +1,8 @@
 # 自动化运行状态
 
-- lastRunType: afternoon
+- lastRunType: morning
 - status: published
-- stage: done
-- updatedAt: 2026-05-10T16:26:00+08:00
-- draftPath: src/data/blog/ai-automation/ai-tools-daily-2026-05-10.md
-- notes: 已完成自审与验证：format:check、lint、build 均通过；文章已设为 draft:false，commit 90d2613 已推送 origin/main。
+- stage: publish
+- updatedAt: 2026-05-10T16:48:00+08:00
+- draftPath: src/data/blog/ai-automation/github-ai-daily-2026-05-10.md
+- notes: draft 已改为 false，最终 build 通过；正在提交并推送到 origin/main。
