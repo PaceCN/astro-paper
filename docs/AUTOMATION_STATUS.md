@@ -1,8 +1,8 @@
 # 自动化运行状态
 
-- lastRunType: morning
+- lastRunType: afternoon
 - status: published
-- stage: done
-- updatedAt: 2026-05-11T09:19:00+08:00
-- draftPath: src/data/blog/ai-automation/github-ai-daily-2026-05-11.md
-- notes: Published 2026-05-11 morning GitHub/AI digest. Sources verified via GitHub Trending/API/READMEs and official OpenAI/GitHub/VS Code docs; risky gray projects excluded. format:check, lint, and build passed after draft:false.
+- stage: publish
+- updatedAt: 2026-05-11T16:20:00+08:00
+- draftPath: src/data/blog/ai-automation/ai-tools-daily-2026-05-11.md
+- notes: Published afternoon AI tools digest. Self-review passed; format:check, lint, and build passed after draft:false. Astro emitted a non-fatal duplicate-id warning for the same new file, but route generation included the post.
