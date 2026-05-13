@@ -1,40 +1,155 @@
 ---
-import { getCollection } from "astro:content";
 import AdminLayout from "@/layouts/AdminLayout.astro";
-import { getPath } from "@/utils/getPath";
-
-const posts = (await getCollection("blog")).sort(
-  (a, b) => b.data.pubDatetime.getTime() - a.data.pubDatetime.getTime()
-);
 ---
 
 <AdminLayout title="文章管理">
-  <p>
-    当前为静态只读列表。发布文章仍通过修改 Markdown
-    frontmatter、运行校验、构建、提交来完成。
-  </p>
-  <table>
-    <thead>
-      <tr
-        ><th>状态</th><th>标题</th><th>发布时间</th><th>更新时间</th><th
-          >路径</th
-        ></tr
+  <div id="posts-admin">
+    <form
+      data-login
+      class="not-prose max-w-md rounded-lg border border-border p-4"
+      hidden
+    >
+      <label class="block text-sm font-semibold" for="posts-admin-password"
+        >后台密码</label
       >
-    </thead>
-    <tbody>
-      {
-        posts.map(post => (
-          <tr>
-            <td>{post.data.draft ? "草稿" : "发布"}</td>
-            <td>{post.data.title}</td>
-            <td>{post.data.pubDatetime.toISOString().slice(0, 10)}</td>
-            <td>{post.data.modDatetime?.toISOString().slice(0, 10) ?? "-"}</td>
-            <td>
-              <code>{getPath(post.id, post.filePath)}</code>
-            </td>
-          </tr>
-        ))
+      <input
+        id="posts-admin-password"
+        name="password"
+        type="password"
+        class="mt-2 w-full rounded border border-border bg-background px-3 py-2"
+        required
+      />
+      <button
+        class="mt-3 rounded bg-accent px-4 py-2 text-sm font-semibold text-white"
+        type="submit">登录</button
+      >
+      <p data-login-error class="mt-2 text-sm text-red-600" hidden></p>
+    </form>
+
+    <div data-admin hidden>
+      <p data-status class="not-prose text-sm opacity-75">
+        读取 BLOG_DB 文章索引...
+      </p>
+      <p data-error class="text-sm text-red-600" hidden></p>
+      <div class="not-prose overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead
+            ><tr
+              ><th>状态</th><th>标题</th><th>发布时间</th><th>更新时间</th><th
+                >路径</th
+              ><th>标签</th></tr
+            ></thead
+          >
+          <tbody data-posts></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    const root = document.querySelector("#posts-admin");
+    const loginForm = root?.querySelector("[data-login]");
+    const admin = root?.querySelector("[data-admin]");
+    const tbody = root?.querySelector("[data-posts]");
+    const status = root?.querySelector("[data-status]");
+    const errorEl = root?.querySelector("[data-error]");
+    const loginError = root?.querySelector("[data-login-error]");
+
+    const api = async (path, options = {}) => {
+      const response = await fetch(`/api/admin/${path}`, {
+        credentials: "same-origin",
+        headers: {
+          "content-type": "application/json",
+          ...(options.headers || {}),
+        },
+        ...options,
+      });
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.error || `API failed: ${response.status}`);
+      return data;
+    };
+
+    const escapeHtml = value =>
+      String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+
+    const parseTags = value => {
+      if (Array.isArray(value)) return value.join(", ");
+      try {
+        return JSON.parse(value || "[]").join(", ");
+      } catch {
+        return value || "";
       }
-    </tbody>
-  </table>
+    };
+
+    const render = posts => {
+      tbody.innerHTML = posts
+        .map(
+          post => `<tr>
+            <td>${Number(post.draft) === 1 || post.status === "draft" ? "草稿" : "发布"}</td>
+            <td>${escapeHtml(post.title || "-")}</td>
+            <td>${escapeHtml(String(post.pub_datetime || "-").slice(0, 10))}</td>
+            <td>${escapeHtml(post.mod_datetime ? String(post.mod_datetime).slice(0, 10) : "-")}</td>
+            <td><code>${escapeHtml(post.slug || post.source_path || "-")}</code></td>
+            <td>${escapeHtml(parseTags(post.tags))}</td>
+          </tr>`
+        )
+        .join("");
+    };
+
+    const showError = message => {
+      errorEl.textContent = message;
+      errorEl.hidden = !message;
+    };
+
+    const load = async () => {
+      try {
+        const data = await api("posts");
+        render(data.posts);
+        status.textContent = `已从 BLOG_DB 读取 ${data.posts.length} 篇文章索引。`;
+        showError("");
+      } catch (error) {
+        render([]);
+        status.textContent = "BLOG_DB 文章索引读取失败。";
+        showError(error.message);
+      }
+    };
+
+    const refreshAuth = async () => {
+      const me = await api("me");
+      if (me.authenticated) {
+        loginForm.hidden = true;
+        admin.hidden = false;
+        await load();
+      } else {
+        loginForm.hidden = false;
+        admin.hidden = true;
+      }
+    };
+
+    loginForm?.addEventListener("submit", async event => {
+      event.preventDefault();
+      loginError.hidden = true;
+      try {
+        await api("login", {
+          method: "POST",
+          body: JSON.stringify({ password: loginForm.password.value }),
+        });
+        loginForm.password.value = "";
+        await refreshAuth();
+      } catch (error) {
+        loginError.textContent = error.message;
+        loginError.hidden = false;
+      }
+    });
+
+    refreshAuth().catch(() => {
+      loginForm.hidden = false;
+      admin.hidden = true;
+    });
+  </script>
 </AdminLayout>

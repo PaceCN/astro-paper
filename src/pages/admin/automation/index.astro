@@ -2,19 +2,219 @@
 import AdminLayout from "@/layouts/AdminLayout.astro";
 ---
 
-<AdminLayout title="自动化状态">
-  <p>自动化任务状态源文件：<code>docs/AUTOMATION_STATUS.md</code>。</p>
-  <h2>失败处理</h2>
-  <ul>
-    <li>
-      如果 morning/afternoon 任务停在 <code>in_progress</code>，先检查 cron run
-      记录和模型超时。
-    </li>
-    <li>如果生成了草稿但未发布，先运行 format/lint/build/date validation。</li>
-    <li>
-      任何发布流程不得批量覆盖旧文章的 <code>pubDatetime</code> 或 <code
-        >modDatetime</code
-      >。
-    </li>
-  </ul>
+<AdminLayout title="自动化与日期审计">
+  <div id="automation-admin">
+    <form
+      data-login
+      class="not-prose max-w-md rounded-lg border border-border p-4"
+      hidden
+    >
+      <label class="block text-sm font-semibold" for="automation-admin-password"
+        >后台密码</label
+      >
+      <input
+        id="automation-admin-password"
+        name="password"
+        type="password"
+        class="mt-2 w-full rounded border border-border bg-background px-3 py-2"
+        required
+      />
+      <button
+        class="mt-3 rounded bg-accent px-4 py-2 text-sm font-semibold text-white"
+        type="submit">登录</button
+      >
+      <p data-login-error class="mt-2 text-sm text-red-600" hidden></p>
+    </form>
+
+    <div data-admin hidden>
+      <p data-status class="text-sm opacity-75">读取自动化运行记录...</p>
+
+      <h2>写入运行记录</h2>
+      <form
+        data-run-form
+        class="not-prose grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-3"
+      >
+        <label class="block text-sm"
+          >类型<input
+            name="runType"
+            placeholder="morning"
+            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+            required
+          /></label
+        >
+        <label class="block text-sm"
+          >状态<input
+            name="status"
+            placeholder="published"
+            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+            required
+          /></label
+        >
+        <label class="block text-sm"
+          >阶段<input
+            name="stage"
+            placeholder="done"
+            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+          /></label
+        >
+        <label class="block text-sm sm:col-span-3"
+          >备注<input
+            name="notes"
+            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+          /></label
+        >
+        <div class="sm:col-span-3">
+          <button
+            class="rounded bg-accent px-4 py-2 text-sm font-semibold text-white"
+            type="submit">记录</button
+          ><span data-run-status class="ml-3 text-sm"></span>
+        </div>
+      </form>
+
+      <h2>最近运行</h2>
+      <div class="not-prose overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead
+            ><tr
+              ><th>时间</th><th>类型</th><th>状态</th><th>阶段</th><th>草稿</th
+              ><th>备注/错误</th></tr
+            ></thead
+          >
+          <tbody data-runs></tbody>
+        </table>
+      </div>
+
+      <h2>日期审计</h2>
+      <div class="not-prose overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead
+            ><tr
+              ><th>时间</th><th>文件</th><th>pubDatetime</th><th>modDatetime</th
+              ><th>原因</th><th>操作者</th></tr
+            ></thead
+          >
+          <tbody data-audits></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    const root = document.querySelector("#automation-admin");
+    const loginForm = root?.querySelector("[data-login]");
+    const admin = root?.querySelector("[data-admin]");
+    const loginError = root?.querySelector("[data-login-error]");
+    const status = root?.querySelector("[data-status]");
+    const runStatus = root?.querySelector("[data-run-status]");
+    const runsBody = root?.querySelector("[data-runs]");
+    const auditsBody = root?.querySelector("[data-audits]");
+    const runForm = root?.querySelector("[data-run-form]");
+
+    const api = async (path, options = {}) => {
+      const response = await fetch(`/api/admin/${path}`, {
+        credentials: "same-origin",
+        headers: {
+          "content-type": "application/json",
+          ...(options.headers || {}),
+        },
+        ...options,
+      });
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.error || `API failed: ${response.status}`);
+      return data;
+    };
+
+    const renderRuns = runs => {
+      runsBody.innerHTML = runs.length
+        ? runs
+            .map(
+              run =>
+                `<tr><td>${run.created_at || "-"}</td><td>${run.run_type}</td><td>${run.status}</td><td>${run.stage || "-"}</td><td><code>${run.draft_path || "-"}</code></td><td>${run.error || run.notes || "-"}</td></tr>`
+            )
+            .join("")
+        : '<tr><td colspan="6">暂无记录</td></tr>';
+    };
+
+    const renderAudits = audits => {
+      auditsBody.innerHTML = audits.length
+        ? audits
+            .map(
+              audit =>
+                `<tr><td>${audit.created_at || "-"}</td><td><code>${audit.source_path}</code></td><td>${audit.old_pub_datetime || "-"} → ${audit.new_pub_datetime || "-"}</td><td>${audit.old_mod_datetime || "-"} → ${audit.new_mod_datetime || "-"}</td><td>${audit.reason || "-"}</td><td>${audit.actor || "-"}</td></tr>`
+            )
+            .join("")
+        : '<tr><td colspan="6">暂无记录</td></tr>';
+    };
+
+    const load = async () => {
+      try {
+        const [runs, audits] = await Promise.all([
+          api("automation-runs"),
+          api("date-audit"),
+        ]);
+        renderRuns(runs.runs);
+        renderAudits(audits.audits);
+        status.textContent = "已从 BLOG_DB 读取自动化运行记录和日期审计。";
+      } catch (error) {
+        status.textContent = `D1 暂不可用：${error.message}`;
+        renderRuns([]);
+        renderAudits([]);
+      }
+    };
+
+    const refreshAuth = async () => {
+      const me = await api("me");
+      if (me.authenticated) {
+        loginForm.hidden = true;
+        admin.hidden = false;
+        await load();
+      } else {
+        loginForm.hidden = false;
+        admin.hidden = true;
+      }
+    };
+
+    loginForm?.addEventListener("submit", async event => {
+      event.preventDefault();
+      loginError.hidden = true;
+      try {
+        await api("login", {
+          method: "POST",
+          body: JSON.stringify({ password: loginForm.password.value }),
+        });
+        loginForm.password.value = "";
+        await refreshAuth();
+      } catch (error) {
+        loginError.textContent = error.message;
+        loginError.hidden = false;
+      }
+    });
+
+    runForm?.addEventListener("submit", async event => {
+      event.preventDefault();
+      runStatus.textContent = "写入中...";
+      try {
+        await api("automation-runs", {
+          method: "POST",
+          body: JSON.stringify({
+            runType: runForm.runType.value,
+            status: runForm.status.value,
+            stage: runForm.stage.value,
+            notes: runForm.notes.value,
+          }),
+        });
+        runStatus.textContent = "已记录";
+        runForm.reset();
+        await load();
+      } catch (error) {
+        runStatus.textContent = error.message;
+      }
+    });
+
+    refreshAuth().catch(() => {
+      loginForm.hidden = false;
+      admin.hidden = true;
+    });
+  </script>
 </AdminLayout>

@@ -14,7 +14,7 @@ tags:
 description: 最近 CSDN 上不少文章把 MCP、RAG 和 Agent 放在一起讲。真正落地时，先分清它们分别解决什么问题，比追概念更重要。
 ---
 
-这两天在 CSDN 搜 `AI Agent MCP RAG`，能看到不少文章都在讲同一组词：LLM、RAG、Agent、MCP、Skill。这个趋势挺明显，说明大家已经不满足于“模型问答”，开始关心大模型怎么接知识、接工具、接真实业务流程。
+CSDN 最近关于 `AI Agent MCP RAG` 的文章，经常会把同一组词放在一起讲：LLM、RAG、Agent、MCP、Skill。这个趋势挺明显，说明大家已经不满足于“模型问答”，开始关心大模型怎么接知识、接工具、接真实业务流程。
 
 参考线索来自 CSDN 搜索结果中的这篇文章：
 

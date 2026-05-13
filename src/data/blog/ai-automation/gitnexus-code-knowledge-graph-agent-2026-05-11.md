@@ -15,7 +15,7 @@ tags:
 description: CSDN 最近一篇 GitNexus 文章提醒了一个真实问题：AI 编码工具写代码越来越快，但如果看不见调用链、依赖和影响范围，改得越快越容易盲改。
 ---
 
-今天在 CSDN 搜 AI Agent、MCP 和代码库分析时，看到一篇新的 GitNexus 介绍文：
+CSDN 最近有一篇新的 GitNexus 介绍文，把 AI Agent、MCP 和代码库分析放在了一起：
 
 - 《斩获37.3k Star！代码库分析工具 GitNexus开源：给 Claude Code / Cursor 接上代码知识图谱，AI Agent 从此不再盲改。》：<https://blog.csdn.net/m0_74837192/article/details/160952164>
 

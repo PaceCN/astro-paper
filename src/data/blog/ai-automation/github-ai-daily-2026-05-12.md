@@ -2,7 +2,6 @@
 author: wx
 pubDatetime: 2026-05-12T09:00:00+08:00
 title: 今天 GitHub 上涨最快的 5 个 AI 项目，以及安全代理和实时交互模型的新变化
-slug: github-ai-daily-2026-05-12
 featured: false
 draft: false
 tags:
@@ -15,7 +14,7 @@ description: 今天 GitHub 热点集中在 GUI 智能体、AI 编程学习、3D 
 今天的热点有一个共同点：AI 正在离开聊天窗口，进入桌面、浏览器、代码库、3D 内容和个人数据系统。好处是工具越来越接近真实工作流；麻烦也很清楚，权限、日志、成本和误操作风险会一起放大。今天更适合关注“能不能安全地接入日常工作”，而不是只看项目描述里写得多厉害。
 
 > 标签：github每日热点  
-> 统计口径：GitHub Trending daily 与仓库 README，记录时间为 2026-05-12 09:00（Asia/Shanghai）。GitHub Trending 的 “stars today” 会随页面刷新变化，以下数值以本文记录为准。本文跳过了浏览器指纹规避、收益承诺、免费 API 绕路等边界不清或风险更高的项目。
+> 统计口径：GitHub Trending daily 与仓库 README，记录时间为 2026-05-12 09:00（Asia/Shanghai）。GitHub Trending 的 “stars today” 会随页面刷新变化，以下数值以本文记录为准。本文跳过了浏览器指纹规避、不实承诺、免费 API 绕路等边界不清或风险更高的项目。
 
 ## GitHub 今日上涨较快的 5 个 AI 项目
 

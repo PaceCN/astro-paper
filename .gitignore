@@ -24,5 +24,8 @@ pnpm-debug.log*
 .idea/
 
 # pagefind
-
 public/pagefind
+
+# local agent/browser artifacts
+.claude/
+.playwright-cli/

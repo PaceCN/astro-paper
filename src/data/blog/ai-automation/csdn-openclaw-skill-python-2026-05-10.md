@@ -11,10 +11,10 @@ tags:
   - Agent
   - Python
   - CSDN
-description: 今天 CSDN 有篇把 Python 脚本改造成 OpenClaw 技能的文章，方向和本站很贴近；真正可落地的部分，不是照搬脚本，而是先把输入、输出和调用边界写清楚。
+description: CSDN 这篇把 Python 脚本改造成 OpenClaw 技能的文章，方向和本站很贴近；真正可落地的部分，不是照搬脚本，而是先把输入、输出和调用边界写清楚。
 ---
 
-今天在 CSDN 看到一篇 OpenClaw 相关的新文章，标题是《Python脚本到OpenClaw技能：解锁Agent原生能力的转换指南》。这个选题和本站方向挺贴近：很多人手里都有一堆 Python 小脚本，但脚本能跑，不代表 Agent 就能稳定调用。
+CSDN 最近有一篇 OpenClaw 相关的新文章，标题是《Python脚本到OpenClaw技能：解锁Agent原生能力的转换指南》。这个选题和本站方向挺贴近：很多人手里都有一堆 Python 小脚本，但脚本能跑，不代表 Agent 就能稳定调用。
 
 原文地址：<https://blog.csdn.net/xy520521/article/details/160961830>
 

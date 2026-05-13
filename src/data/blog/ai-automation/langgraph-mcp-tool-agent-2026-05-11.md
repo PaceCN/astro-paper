@@ -14,7 +14,7 @@ tags:
 description: CSDN 最近的 LangGraph + MCP 选题提醒了一件事：工具型 Agent 不是把模型接几个函数就完事，真正难的是状态、工具边界和失败处理。
 ---
 
-今天在 CSDN 搜 `MCP AI Agent LangGraph Tool Calling`，搜索结果里有一篇很像开发者会点开的文章：
+CSDN 最近关于 `MCP AI Agent LangGraph Tool Calling` 的搜索结果里，有一篇很像开发者会点开的文章：
 
 - 《100 行代码搞一个带 MCP 工具的 AI Agent：LangGraph + DeepSeek V4 实战》：<https://blog.csdn.net/weixin_50937681/article/details/160959875>
 

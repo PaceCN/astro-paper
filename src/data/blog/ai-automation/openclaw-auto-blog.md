@@ -2,7 +2,6 @@
 author: wx
 pubDatetime: 2026-05-08T07:05:00+08:00
 title: 我用 OpenClaw 自动改造并维护一个 AstroPaper 博客
-slug: openclaw-auto-blog
 featured: false
 draft: true
 tags:
@@ -50,7 +49,7 @@ description: 记录一次用 OpenClaw 辅助改造 AstroPaper 中文博客的过
    - 这个博客接下来会写什么
    - Cloudflare Pages 部署 AstroPaper 的最小配置清单
    - 为什么博客维护适合交给 Agent，但不适合全自动发布
-   - 让技术博客覆盖服务器成本的现实路径
+   - 让技术博客控制运维成本的现实路径
 7. 添加 `docs/PROJECT_LOG.md` 和 `docs/BLOG_OPS.md`，记录运营方向与改造过程。
 8. 降低构建风险：移除 Astro 构建阶段容易受网络影响的 Google 字体实验配置。
 9. 新增 `pnpm-workspace.yaml`，允许必要构建脚本，避免 pnpm 构建报错。

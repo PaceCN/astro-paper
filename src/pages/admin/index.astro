@@ -1,37 +1,258 @@
 ---
-import { getCollection } from "astro:content";
 import AdminLayout from "@/layouts/AdminLayout.astro";
-import { ADS } from "@/config";
-
-const posts = await getCollection("blog");
-const published = posts.filter(post => !post.data.draft);
-const drafts = posts.filter(post => post.data.draft);
-const recent = [...published].sort(
-  (a, b) => b.data.pubDatetime.getTime() - a.data.pubDatetime.getTime()
-)[0];
 ---
 
 <AdminLayout title="后台总览">
-  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-    <div><strong>已发布文章</strong><br />{published.length}</div>
-    <div><strong>草稿</strong><br />{drafts.length}</div>
-    <div>
-      <strong>最近发布</strong><br />{
-        recent?.data.pubDatetime.toISOString().slice(0, 10) ?? "-"
-      }
-    </div>
-    <div>
-      <strong>广告总开关</strong><br />{ADS.enabled ? "已启用" : "未启用"}
+  <div id="admin-app">
+    <form
+      data-login
+      class="not-prose max-w-md rounded-lg border border-border p-4"
+      hidden
+    >
+      <label class="block text-sm font-semibold" for="admin-password"
+        >后台密码</label
+      >
+      <input
+        id="admin-password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        class="mt-2 w-full rounded border border-border bg-background px-3 py-2"
+        required
+      />
+      <button
+        class="mt-3 rounded bg-accent px-4 py-2 text-sm font-semibold text-white"
+        type="submit"
+      >
+        登录
+      </button>
+      <p data-login-error class="mt-2 text-sm text-red-600" hidden></p>
+    </form>
+
+    <div data-admin hidden>
+      <div class="not-prose mb-4 flex justify-end">
+        <button
+          data-logout
+          class="rounded border border-border px-3 py-2 text-sm"
+          >退出登录</button
+        >
+      </div>
+      <div class="not-prose grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div class="rounded-lg border border-border p-4">
+          <strong>文章总数</strong><br /><span data-post-count>-</span>
+        </div>
+        <div class="rounded-lg border border-border p-4">
+          <strong>草稿</strong><br /><span data-draft-count>-</span>
+        </div>
+        <div class="rounded-lg border border-border p-4">
+          <strong>最近发布</strong><br /><span data-recent-publish>-</span>
+        </div>
+        <div class="rounded-lg border border-border p-4">
+          <strong>启用广告位</strong><br /><span data-ad-enabled>-</span>
+        </div>
+        <div class="rounded-lg border border-border p-4">
+          <strong>自动化运行</strong><br /><span data-runs-summary>-</span>
+        </div>
+      </div>
+
+      <h2>站点设置</h2>
+      <form
+        data-settings-form
+        class="not-prose grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2"
+      >
+        <label class="block text-sm">
+          站点标题
+          <input
+            name="siteTitle"
+            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+          />
+        </label>
+        <label class="block text-sm">
+          后台路径说明
+          <input
+            name="adminPathNote"
+            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+          />
+        </label>
+        <label class="flex items-center gap-2 text-sm">
+          <input name="adsEnabled" type="checkbox" /> 广告总开关
+        </label>
+        <div class="sm:col-span-2">
+          <button
+            class="rounded bg-accent px-4 py-2 text-sm font-semibold text-white"
+            type="submit">保存设置</button
+          >
+          <span data-settings-status class="ml-3 text-sm"></span>
+        </div>
+      </form>
+
+      <p data-error class="text-sm text-red-600" hidden></p>
     </div>
   </div>
 
-  <h2>优先事项</h2>
-  <ul>
-    <li>
-      发布前运行 <code>corepack pnpm run validate:dates</code
-      >，防止批量日期覆盖。
-    </li>
-    <li>AdSense 申请前确认隐私政策、使用条款、联系页和关于页可访问。</li>
-    <li>广告位目前由配置文件管理；后续接入 D1 后再开放后台写入。</li>
-  </ul>
+  <script is:inline>
+    const root = document.querySelector("#admin-app");
+    const loginForm = root?.querySelector("[data-login]");
+    const admin = root?.querySelector("[data-admin]");
+    const errorEl = root?.querySelector("[data-error]");
+    const loginError = root?.querySelector("[data-login-error]");
+    const settingsForm = root?.querySelector("[data-settings-form]");
+    const settingsStatus = root?.querySelector("[data-settings-status]");
+
+    const api = async (path, options = {}) => {
+      const response = await fetch(`/api/admin/${path}`, {
+        credentials: "same-origin",
+        headers: {
+          "content-type": "application/json",
+          ...(options.headers || {}),
+        },
+        ...options,
+      });
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.error || `API failed: ${response.status}`);
+      return data;
+    };
+
+    const text = (selector, value) => {
+      const el = root?.querySelector(selector);
+      if (el) el.textContent = value;
+    };
+
+    const showError = message => {
+      if (!errorEl) return;
+      errorEl.textContent = message;
+      errorEl.hidden = !message;
+    };
+
+    const parseSettings = settings =>
+      Object.fromEntries(
+        settings.map(row => {
+          try {
+            return [row.key, JSON.parse(row.value_json)];
+          } catch {
+            return [row.key, row.value_json];
+          }
+        })
+      );
+
+    const renderDashboard = ({
+      posts = [],
+      slots = [],
+      runs = [],
+      settings = [],
+    }) => {
+      const published = posts.filter(
+        post => Number(post.draft) !== 1 && post.status !== "draft"
+      );
+      const drafts = posts.filter(
+        post => Number(post.draft) === 1 || post.status === "draft"
+      );
+      const recent = published[0] || posts[0];
+      text("[data-post-count]", String(posts.length));
+      text("[data-draft-count]", String(drafts.length));
+      text(
+        "[data-recent-publish]",
+        recent?.pub_datetime ? String(recent.pub_datetime).slice(0, 10) : "-"
+      );
+      text(
+        "[data-ad-enabled]",
+        String(slots.filter(slot => Number(slot.enabled) === 1).length)
+      );
+      text(
+        "[data-runs-summary]",
+        runs.length
+          ? `${runs.length} 条记录，最近 ${runs[0].status}`
+          : "暂无记录"
+      );
+
+      const parsedSettings = parseSettings(settings);
+      if (settingsForm) {
+        settingsForm.siteTitle.value = parsedSettings.siteTitle || "";
+        settingsForm.adminPathNote.value =
+          parsedSettings.adminPathNote || "PUBLIC_ADMIN_BASE_PATH 构建时生效";
+        settingsForm.adsEnabled.checked = Boolean(parsedSettings.adsEnabled);
+      }
+      showError("");
+    };
+
+    const loadDashboard = async () => {
+      try {
+        const [posts, ads, runs, settings] = await Promise.all([
+          api("posts"),
+          api("ads"),
+          api("automation-runs"),
+          api("settings"),
+        ]);
+        renderDashboard({
+          posts: posts.posts,
+          slots: ads.slots,
+          runs: runs.runs,
+          settings: settings.settings,
+        });
+      } catch (error) {
+        showError(`后台数据读取失败：${error.message}`);
+      }
+    };
+
+    const refreshAuth = async () => {
+      const me = await api("me");
+      if (me.authenticated) {
+        loginForm.hidden = true;
+        admin.hidden = false;
+        await loadDashboard();
+      } else {
+        loginForm.hidden = false;
+        admin.hidden = true;
+      }
+    };
+
+    loginForm?.addEventListener("submit", async event => {
+      event.preventDefault();
+      loginError.hidden = true;
+      try {
+        await api("login", {
+          method: "POST",
+          body: JSON.stringify({ password: loginForm.password.value }),
+        });
+        loginForm.password.value = "";
+        await refreshAuth();
+      } catch (error) {
+        loginError.textContent = error.message;
+        loginError.hidden = false;
+      }
+    });
+
+    root
+      ?.querySelector("[data-logout]")
+      ?.addEventListener("click", async () => {
+        await api("logout", { method: "POST" });
+        await refreshAuth();
+      });
+
+    settingsForm?.addEventListener("submit", async event => {
+      event.preventDefault();
+      settingsStatus.textContent = "保存中...";
+      try {
+        await api("settings", {
+          method: "PUT",
+          body: JSON.stringify({
+            settings: {
+              siteTitle: settingsForm.siteTitle.value,
+              adminPathNote: settingsForm.adminPathNote.value,
+              adsEnabled: settingsForm.adsEnabled.checked,
+            },
+          }),
+        });
+        settingsStatus.textContent = "已保存";
+      } catch (error) {
+        settingsStatus.textContent = error.message;
+      }
+    });
+
+    refreshAuth().catch(() => {
+      loginForm.hidden = false;
+      admin.hidden = true;
+    });
+  </script>
 </AdminLayout>

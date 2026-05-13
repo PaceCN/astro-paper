@@ -39,6 +39,11 @@ CREATE TABLE IF NOT EXISTS site_settings (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+INSERT OR IGNORE INTO site_settings (key, value_json) VALUES
+  ('siteTitle', '"Pace Notes"'),
+  ('adminPathNote', '"PUBLIC_ADMIN_BASE_PATH is evaluated at build time; redeploy after changing it."'),
+  ('adsEnabled', 'false');
+
 CREATE TABLE IF NOT EXISTS automation_runs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   run_type TEXT NOT NULL,

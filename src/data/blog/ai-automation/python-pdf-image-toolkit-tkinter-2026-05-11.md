@@ -16,7 +16,7 @@ tags:
 description: 这是一份基于 Python 的本地 PDF 工具源码，使用 Tkinter 做桌面界面，PyMuPDF 负责 PDF 页面渲染，Pillow 负责图片读取、预览和 PDF 合并。
 ---
 
-最近整理了一个轻量级本地 PDF 工具集，功能很直接：
+这个轻量级本地 PDF 工具集解决的是两个常见需求：PDF 页面导出成图片，以及多张图片合并成 PDF。它的功能很直接：
 
 - 把 PDF 页面批量导出为 JPEG 图片。
 - 把多张图片按顺序合并成 PDF。

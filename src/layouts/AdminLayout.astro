@@ -9,12 +9,16 @@ type Props = {
   description?: string;
 };
 
-const { title, description = "Pace Notes 后台管理预览。" } = Astro.props;
+const { title, description = "Pace Notes 后台管理。" } = Astro.props;
+const adminBasePath = import.meta.env.PUBLIC_ADMIN_BASE_PATH || "/admin";
+const normalizedAdminBasePath = adminBasePath.startsWith("/")
+  ? adminBasePath
+  : `/${adminBasePath}`;
 const nav = [
-  ["/admin", "总览"],
-  ["/admin/posts", "文章"],
-  ["/admin/ads", "广告"],
-  ["/admin/automation", "自动化"],
+  [normalizedAdminBasePath, "总览"],
+  [`${normalizedAdminBasePath}/posts`, "文章"],
+  [`${normalizedAdminBasePath}/ads`, "广告"],
+  [`${normalizedAdminBasePath}/automation`, "自动化"],
 ];
 ---
 
@@ -22,10 +26,12 @@ const nav = [
   <Header />
   <main id="main-content" class="app-layout py-8">
     <div class="mb-6 rounded-lg border border-border bg-background p-4">
-      <p class="text-sm font-semibold text-accent">后台管理预览</p>
+      <p class="text-sm font-semibold text-accent">Pace Notes 后台</p>
       <p class="mt-1 text-sm opacity-80">
-        当前是静态只读后台骨架。生产环境开放写操作前，必须接入鉴权、Cloudflare
-        Pages Functions 和 D1 权限控制。
+        页面可以公开访问，但所有后台 API 读写都需要通过 <code
+          >ADMIN_PASSWORD</code
+        >
+        登录后由 httpOnly cookie 认证。
       </p>
       <nav class="mt-4 flex flex-wrap gap-3 text-sm">
         {
@@ -36,6 +42,14 @@ const nav = [
           ))
         }
       </nav>
+      {
+        normalizedAdminBasePath !== "/admin" && (
+          <p class="mt-3 text-xs opacity-70">
+            当前构建后台路径：<code>{normalizedAdminBasePath}</code>。Astro
+            静态路由需要重新部署后生效。
+          </p>
+        )
+      }
     </div>
     <section class="app-prose max-w-none">
       <h1>{title}</h1>
