@@ -1,0 +1,40 @@
+---
+import { getCollection } from "astro:content";
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import { getPath } from "@/utils/getPath";
+
+const posts = (await getCollection("blog")).sort(
+  (a, b) => b.data.pubDatetime.getTime() - a.data.pubDatetime.getTime()
+);
+---
+
+<AdminLayout title="文章管理">
+  <p>
+    当前为静态只读列表。发布文章仍通过修改 Markdown
+    frontmatter、运行校验、构建、提交来完成。
+  </p>
+  <table>
+    <thead>
+      <tr
+        ><th>状态</th><th>标题</th><th>发布时间</th><th>更新时间</th><th
+          >路径</th
+        ></tr
+      >
+    </thead>
+    <tbody>
+      {
+        posts.map(post => (
+          <tr>
+            <td>{post.data.draft ? "草稿" : "发布"}</td>
+            <td>{post.data.title}</td>
+            <td>{post.data.pubDatetime.toISOString().slice(0, 10)}</td>
+            <td>{post.data.modDatetime?.toISOString().slice(0, 10) ?? "-"}</td>
+            <td>
+              <code>{getPath(post.id, post.filePath)}</code>
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</AdminLayout>

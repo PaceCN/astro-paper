@@ -10,7 +10,9 @@
     "astro": "astro",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "validate:dates": "node scripts/validate-post-dates.mjs",
+    "export:posts-index": "node scripts/export-posts-index.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.14",

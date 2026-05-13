@@ -1,0 +1,37 @@
+---
+import { getCollection } from "astro:content";
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import { ADS } from "@/config";
+
+const posts = await getCollection("blog");
+const published = posts.filter(post => !post.data.draft);
+const drafts = posts.filter(post => post.data.draft);
+const recent = [...published].sort(
+  (a, b) => b.data.pubDatetime.getTime() - a.data.pubDatetime.getTime()
+)[0];
+---
+
+<AdminLayout title="后台总览">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div><strong>已发布文章</strong><br />{published.length}</div>
+    <div><strong>草稿</strong><br />{drafts.length}</div>
+    <div>
+      <strong>最近发布</strong><br />{
+        recent?.data.pubDatetime.toISOString().slice(0, 10) ?? "-"
+      }
+    </div>
+    <div>
+      <strong>广告总开关</strong><br />{ADS.enabled ? "已启用" : "未启用"}
+    </div>
+  </div>
+
+  <h2>优先事项</h2>
+  <ul>
+    <li>
+      发布前运行 <code>corepack pnpm run validate:dates</code
+      >，防止批量日期覆盖。
+    </li>
+    <li>AdSense 申请前确认隐私政策、使用条款、联系页和关于页可访问。</li>
+    <li>广告位目前由配置文件管理；后续接入 D1 后再开放后台写入。</li>
+  </ul>
+</AdminLayout>

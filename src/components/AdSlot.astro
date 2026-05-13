@@ -1,0 +1,56 @@
+---
+import { ADS } from "@/config";
+
+type SlotName = keyof typeof ADS.slots;
+
+type Props = {
+  slot: SlotName;
+  class?: string;
+};
+
+const { slot, class: className = "" } = Astro.props;
+const slotConfig = ADS.slots[slot];
+const hasConfig = Boolean(
+  ADS.enabled && slotConfig.enabled && ADS.googleClient && slotConfig.slot
+);
+const showPlaceholder = import.meta.env.DEV && !hasConfig;
+---
+
+{
+  hasConfig ? (
+    <aside
+      class:list={["my-8", className]}
+      aria-label="广告"
+      data-ad-slot={slot}
+    >
+      <ins
+        class="adsbygoogle block"
+        style="display:block"
+        data-ad-client={ADS.googleClient}
+        data-ad-slot={slotConfig.slot}
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+      <script
+        is:inline
+        async
+        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADS.googleClient}`}
+        crossorigin="anonymous"
+      />
+      <script is:inline>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+    </aside>
+  ) : showPlaceholder ? (
+    <aside
+      class:list={[
+        "text-muted-foreground my-8 rounded border border-dashed border-border p-4 text-center text-sm",
+        className,
+      ]}
+      aria-label="广告占位"
+      data-ad-slot={slot}
+    >
+      广告位占位：{slotConfig.label}。当前未启用或未配置。
+    </aside>
+  ) : null
+}

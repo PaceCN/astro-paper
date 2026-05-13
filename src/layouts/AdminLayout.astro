@@ -1,0 +1,46 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import { SITE } from "@/config";
+
+type Props = {
+  title: string;
+  description?: string;
+};
+
+const { title, description = "Pace Notes 后台管理预览。" } = Astro.props;
+const nav = [
+  ["/admin", "总览"],
+  ["/admin/posts", "文章"],
+  ["/admin/ads", "广告"],
+  ["/admin/automation", "自动化"],
+];
+---
+
+<Layout title={`${title} | 后台 | ${SITE.title}`} description={description}>
+  <Header />
+  <main id="main-content" class="app-layout py-8">
+    <div class="mb-6 rounded-lg border border-border bg-background p-4">
+      <p class="text-sm font-semibold text-accent">后台管理预览</p>
+      <p class="mt-1 text-sm opacity-80">
+        当前是静态只读后台骨架。生产环境开放写操作前，必须接入鉴权、Cloudflare
+        Pages Functions 和 D1 权限控制。
+      </p>
+      <nav class="mt-4 flex flex-wrap gap-3 text-sm">
+        {
+          nav.map(([href, label]) => (
+            <a href={href} class="hover:text-accent">
+              {label}
+            </a>
+          ))
+        }
+      </nav>
+    </div>
+    <section class="app-prose max-w-none">
+      <h1>{title}</h1>
+      <slot />
+    </section>
+  </main>
+  <Footer />
+</Layout>

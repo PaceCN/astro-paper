@@ -1,0 +1,37 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import { ADS } from "@/config";
+
+const slots = Object.entries(ADS.slots);
+---
+
+<AdminLayout title="广告位管理">
+  <p>
+    当前广告位从 <code>src/config.ts</code> 读取。申请 AdSense 通过并获得 client/slot
+    后，再启用对应位置。
+  </p>
+  <ul>
+    <li>Provider: <code>{ADS.provider}</code></li>
+    <li>Client: <code>{ADS.googleClient || "未配置"}</code></li>
+    <li>总开关: {ADS.enabled ? "已启用" : "未启用"}</li>
+  </ul>
+  <table>
+    <thead><tr><th>Key</th><th>位置</th><th>Slot</th><th>状态</th></tr></thead>
+    <tbody>
+      {
+        slots.map(([key, slot]) => (
+          <tr>
+            <td>
+              <code>{key}</code>
+            </td>
+            <td>{slot.label}</td>
+            <td>
+              <code>{slot.slot || "未配置"}</code>
+            </td>
+            <td>{slot.enabled ? "启用" : "关闭"}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</AdminLayout>

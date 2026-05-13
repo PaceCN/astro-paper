@@ -1,0 +1,20 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+---
+
+<AdminLayout title="自动化状态">
+  <p>自动化任务状态源文件：<code>docs/AUTOMATION_STATUS.md</code>。</p>
+  <h2>失败处理</h2>
+  <ul>
+    <li>
+      如果 morning/afternoon 任务停在 <code>in_progress</code>，先检查 cron run
+      记录和模型超时。
+    </li>
+    <li>如果生成了草稿但未发布，先运行 format/lint/build/date validation。</li>
+    <li>
+      任何发布流程不得批量覆盖旧文章的 <code>pubDatetime</code> 或 <code
+        >modDatetime</code
+      >。
+    </li>
+  </ul>
+</AdminLayout>

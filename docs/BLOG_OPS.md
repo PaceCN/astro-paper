@@ -82,3 +82,12 @@
 ## SEO 与真人化写作
 
 详细规则见 `docs/SEO_STYLE_GUIDE.md`。每日自动发布前必须检查标题、description、首段、来源链接和首页预览，避免文章像内部任务说明或 AI 批量摘要。
+
+
+## 日期规则
+
+- 文章排序、首页、列表、归档、上一篇/下一篇和 RSS 顺序都以 `pubDatetime` 为准。
+- `modDatetime` 只表示内容更新，不用于覆盖发布时间或 RSS `pubDate`。
+- 页面展示稳定发布时间；只有当 `modDatetime > pubDatetime` 时额外展示更新时间。
+- SEO `datePublished` 使用 `pubDatetime`，`dateModified` 可使用 `modDatetime`。
+- 发布前运行 `corepack pnpm run validate:dates`，检查缺失/无效日期、更新时间早于发布时间、异常重复更新时间、过远未来日期和文件名日期偏差。
