@@ -1,5 +1,6 @@
 -- Pace Notes admin publish controls migration.
--- Run this after 0001 on existing D1 databases. Ignore duplicate-column errors if a column already exists.
+-- Safe subset: this creates the publish queue and fixed ad slots.
+-- If ALTER TABLE duplicate-column errors happen in D1 console, skip those ALTER lines.
 
 INSERT OR IGNORE INTO ad_slots (slot_key, placement, notes) VALUES
   ('pageTop', '页首', '页面顶部广告开关'),
@@ -30,13 +31,3 @@ CREATE TABLE IF NOT EXISTS publish_requests (
 
 CREATE INDEX IF NOT EXISTS idx_publish_requests_status_created
 ON publish_requests(status, created_at ASC);
-
--- Existing databases created from the older 0001 may need these columns.
--- Cloudflare D1/SQLite does not support ADD COLUMN IF NOT EXISTS everywhere;
--- run each ALTER only if the column is missing, or ignore duplicate-column errors.
-ALTER TABLE automation_runs ADD COLUMN trigger_source TEXT NOT NULL DEFAULT '';
-ALTER TABLE automation_runs ADD COLUMN requested_by TEXT NOT NULL DEFAULT '';
-ALTER TABLE automation_runs ADD COLUMN post_slug TEXT;
-ALTER TABLE automation_runs ADD COLUMN published_url TEXT;
-ALTER TABLE automation_runs ADD COLUMN validation_summary TEXT;
-ALTER TABLE automation_runs ADD COLUMN source_count INTEGER;
