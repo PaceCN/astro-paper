@@ -67,25 +67,91 @@ const fallbackSlots = Object.entries(ADS.slots).map(([slot_key, slot]) => ({
       return data;
     };
 
-    const render = slots => {
-      slotsEl.innerHTML = slots
-        .map(
-          slot => `<form data-slot="${slot.slot_key}" class="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2">
-            <h2 class="sm:col-span-2"><code>${slot.slot_key}</code></h2>
-            <label class="block text-sm">Client ID<input name="clientId" value="${slot.client_id || ""}" class="mt-1 w-full rounded border border-border bg-background px-3 py-2" /></label>
-            <label class="block text-sm">Slot ID<input name="slotId" value="${slot.slot_id || ""}" class="mt-1 w-full rounded border border-border bg-background px-3 py-2" /></label>
-            <label class="block text-sm">位置<input name="placement" value="${slot.placement || ""}" class="mt-1 w-full rounded border border-border bg-background px-3 py-2" /></label>
-            <label class="flex items-center gap-2 text-sm"><input name="enabled" type="checkbox" ${Number(slot.enabled) === 1 ? "checked" : ""} /> 启用</label>
-            <label class="block text-sm sm:col-span-2">备注<textarea name="notes" class="mt-1 w-full rounded border border-border bg-background px-3 py-2">${slot.notes || ""}</textarea></label>
-            <div class="sm:col-span-2"><button class="rounded bg-accent px-4 py-2 text-sm font-semibold text-white" type="submit">保存</button><span data-save-status class="ml-3 text-sm"></span></div>
-          </form>`
-        )
-        .join("");
+    const fieldClasses =
+      "mt-1 w-full rounded border border-border bg-background px-3 py-2";
 
-      slotsEl.querySelectorAll("form[data-slot]").forEach(form => {
+    const el = (tag, attrs = {}, children = []) => {
+      const node = document.createElement(tag);
+      Object.entries(attrs).forEach(([key, value]) => {
+        if (key === "class") node.className = value;
+        else if (key === "text") node.textContent = value;
+        else if (key === "checked") node.checked = Boolean(value);
+        else if (key === "dataset") Object.assign(node.dataset, value);
+        else node.setAttribute(key, value);
+      });
+      children.forEach(child => node.append(child));
+      return node;
+    };
+
+    const makeInputLabel = (text, name, value = "") => {
+      const input = el("input", { name, class: fieldClasses });
+      input.value = value || "";
+      return el("label", { class: "block text-sm", text }, [input]);
+    };
+
+    const render = slots => {
+      slotsEl.replaceChildren();
+      slots.forEach(slot => {
+        const form = el("form", {
+          class:
+            "grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2",
+          dataset: { slot: slot.slot_key },
+        });
+        const title = el("h2", { class: "sm:col-span-2" }, [
+          el("code", { text: slot.slot_key }),
+        ]);
+        const clientId = makeInputLabel(
+          "Client ID",
+          "clientId",
+          slot.client_id
+        );
+        const slotId = makeInputLabel("Slot ID", "slotId", slot.slot_id);
+        const placement = makeInputLabel("位置", "placement", slot.placement);
+        const enabledInput = el("input", {
+          name: "enabled",
+          type: "checkbox",
+          checked: Number(slot.enabled) === 1,
+        });
+        const enabled = el(
+          "label",
+          { class: "flex items-center gap-2 text-sm" },
+          [enabledInput, document.createTextNode(" 启用")]
+        );
+        const notes = el("textarea", { name: "notes", class: fieldClasses });
+        notes.value = slot.notes || "";
+        const notesLabel = el(
+          "label",
+          {
+            class: "block text-sm sm:col-span-2",
+            text: "备注",
+          },
+          [notes]
+        );
+        const saveStatus = el("span", {
+          class: "ml-3 text-sm",
+          dataset: { saveStatus: "" },
+        });
+        const actions = el("div", { class: "sm:col-span-2" }, [
+          el("button", {
+            class:
+              "rounded bg-accent px-4 py-2 text-sm font-semibold text-white",
+            type: "submit",
+            text: "保存",
+          }),
+          saveStatus,
+        ]);
+
+        form.append(
+          title,
+          clientId,
+          slotId,
+          placement,
+          enabled,
+          notesLabel,
+          actions
+        );
         form.addEventListener("submit", async event => {
           event.preventDefault();
-          const saveStatus = form.querySelector("[data-save-status]");
           saveStatus.textContent = "保存中...";
           try {
             await api(`ads/${encodeURIComponent(form.dataset.slot)}`, {
@@ -103,6 +169,7 @@ const fallbackSlots = Object.entries(ADS.slots).map(([slot_key, slot]) => ({
             saveStatus.textContent = error.message;
           }
         });
+        slotsEl.append(form);
       });
     };
 

@@ -203,7 +203,12 @@ The 16:00 Asia/Shanghai scheduled job should now ask for the CSDN technical-post
    - set `draft: false`;
    - commit with message `Publish daily digest YYYY-MM-DD morning|afternoon`;
    - `git push origin main`.
-4. Main-agent supervision is post-run: main checks `docs/AUTOMATION_STATUS.md`, git history, and site output.
+4. After a successful push, sync the remote admin index when credentials are available:
+   - set `PACE_NOTES_ADMIN_URL` to the deployed site origin, for example `https://astro-paper-18u.pages.dev`;
+   - set `PACE_NOTES_ADMIN_PASSWORD` from the private admin password;
+   - run `corepack pnpm run sync:posts-index`.
+5. Record the final outcome in `docs/AUTOMATION_STATUS.md`; if admin sync fails, keep the article published but write the sync blocker clearly.
+6. Main-agent supervision is post-run: main checks `docs/AUTOMATION_STATUS.md`, git history, site output, and admin index freshness.
 
 ## Test mode
 

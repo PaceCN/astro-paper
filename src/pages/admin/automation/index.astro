@@ -125,26 +125,64 @@ import AdminLayout from "@/layouts/AdminLayout.astro";
       return data;
     };
 
+    const cell = (text, code = false) => {
+      const td = document.createElement("td");
+      if (code) {
+        const codeEl = document.createElement("code");
+        codeEl.textContent = text || "-";
+        td.append(codeEl);
+      } else {
+        td.textContent = text || "-";
+      }
+      return td;
+    };
+
+    const emptyRow = (tbody, span) => {
+      const tr = document.createElement("tr");
+      const td = cell("暂无记录");
+      td.colSpan = span;
+      tr.append(td);
+      tbody.replaceChildren(tr);
+    };
+
     const renderRuns = runs => {
-      runsBody.innerHTML = runs.length
-        ? runs
-            .map(
-              run =>
-                `<tr><td>${run.created_at || "-"}</td><td>${run.run_type}</td><td>${run.status}</td><td>${run.stage || "-"}</td><td><code>${run.draft_path || "-"}</code></td><td>${run.error || run.notes || "-"}</td></tr>`
-            )
-            .join("")
-        : '<tr><td colspan="6">暂无记录</td></tr>';
+      if (!runs.length) return emptyRow(runsBody, 6);
+      runsBody.replaceChildren(
+        ...runs.map(run => {
+          const tr = document.createElement("tr");
+          tr.append(
+            cell(run.created_at),
+            cell(run.run_type),
+            cell(run.status),
+            cell(run.stage),
+            cell(run.draft_path, true),
+            cell(run.error || run.notes)
+          );
+          return tr;
+        })
+      );
     };
 
     const renderAudits = audits => {
-      auditsBody.innerHTML = audits.length
-        ? audits
-            .map(
-              audit =>
-                `<tr><td>${audit.created_at || "-"}</td><td><code>${audit.source_path}</code></td><td>${audit.old_pub_datetime || "-"} → ${audit.new_pub_datetime || "-"}</td><td>${audit.old_mod_datetime || "-"} → ${audit.new_mod_datetime || "-"}</td><td>${audit.reason || "-"}</td><td>${audit.actor || "-"}</td></tr>`
-            )
-            .join("")
-        : '<tr><td colspan="6">暂无记录</td></tr>';
+      if (!audits.length) return emptyRow(auditsBody, 6);
+      auditsBody.replaceChildren(
+        ...audits.map(audit => {
+          const tr = document.createElement("tr");
+          tr.append(
+            cell(audit.created_at),
+            cell(audit.source_path, true),
+            cell(
+              `${audit.old_pub_datetime || "-"} → ${audit.new_pub_datetime || "-"}`
+            ),
+            cell(
+              `${audit.old_mod_datetime || "-"} → ${audit.new_mod_datetime || "-"}`
+            ),
+            cell(audit.reason),
+            cell(audit.actor)
+          );
+          return tr;
+        })
+      );
     };
 
     const load = async () => {

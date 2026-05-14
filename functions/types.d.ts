@@ -1,7 +1,11 @@
 declare type D1Result<T = unknown> = {
   results?: T[];
   success?: boolean;
-  meta?: unknown;
+  meta?: {
+    last_row_id?: number;
+    changes?: number;
+    [key: string]: unknown;
+  } & T;
 };
 
 declare interface D1PreparedStatement {

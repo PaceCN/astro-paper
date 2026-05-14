@@ -1,4 +1,4 @@
-import { json, methodNotAllowed, requireDb, withAdminApi, type AdminContext } from "./_utils";
+import { json, methodNotAllowed, requireDb, withAdminApi, type AdminContext } from "../_utils";
 
 export function onRequestGet(context: AdminContext) {
   return withAdminApi(context, async () => {
@@ -6,9 +6,9 @@ export function onRequestGet(context: AdminContext) {
     if (missing) return missing;
 
     const { results } = await context.env.BLOG_DB!.prepare(
-      "SELECT slug, source_path, title, status, draft, pub_datetime, mod_datetime, tags, description, checksum, updated_at FROM posts_index ORDER BY pub_datetime DESC"
+      "SELECT slot_key, provider, client_id, slot_id, enabled, placement, notes, updated_at FROM ad_slots ORDER BY id ASC"
     ).all();
-    return json({ posts: results ?? [] });
+    return json({ slots: results ?? [] });
   });
 }
 

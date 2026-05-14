@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "lint": "eslint .",
     "validate:dates": "node scripts/validate-post-dates.mjs",
-    "export:posts-index": "node scripts/export-posts-index.mjs"
+    "export:posts-index": "node scripts/export-posts-index.mjs",
+    "sync:posts-index": "node scripts/sync-posts-index-to-admin.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.14",
