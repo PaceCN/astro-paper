@@ -45,6 +45,16 @@ Rewrite rules:
 - Use dates for daily posts only when useful; keep the title meaningful without the date.
 - `description` must be reader-facing, never a task description.
 
+## Admin queue and API
+
+If `PACE_NOTES_ADMIN_URL` and `PACE_NOTES_ADMIN_API_TOKEN` are available, check the manual publish queue before routine work:
+
+```bash
+corepack pnpm run admin:publish-requests
+```
+
+Treat queued `publish_requests` as user-requested work, but still apply all editorial and validation gates. Do not mark a request `published` until the article is actually pushed, the site build passes, and the admin post index is synced. Use `PATCH /api/admin/publish-requests` with the API token to update status when possible.
+
 ## Status heartbeat
 
 At each stage, update `docs/AUTOMATION_STATUS.md`:

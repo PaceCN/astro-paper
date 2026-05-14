@@ -1,16 +1,38 @@
 ---
 import AdminLayout from "@/layouts/AdminLayout.astro";
-import { ADS } from "@/config";
 
-const fallbackSlots = Object.entries(ADS.slots).map(([slot_key, slot]) => ({
-  slot_key,
-  provider: ADS.provider,
-  client_id: ADS.googleClient,
-  slot_id: slot.slot,
-  enabled: slot.enabled ? 1 : 0,
-  placement: slot.label,
-  notes: "来自 src/config.ts 的只读 fallback",
-}));
+const fallbackSlots = [
+  {
+    slot_key: "pageTop",
+    placement: "页首",
+    enabled: 0,
+    notes: "页面顶部广告开关",
+  },
+  {
+    slot_key: "pageMiddle",
+    placement: "页中",
+    enabled: 0,
+    notes: "正文或列表中部广告开关",
+  },
+  {
+    slot_key: "pageBottom",
+    placement: "页尾",
+    enabled: 0,
+    notes: "页面底部广告开关",
+  },
+  {
+    slot_key: "leftRail",
+    placement: "左侧",
+    enabled: 0,
+    notes: "桌面端左侧广告开关",
+  },
+  {
+    slot_key: "rightRail",
+    placement: "右侧",
+    enabled: 0,
+    notes: "桌面端右侧广告开关",
+  },
+];
 ---
 
 <AdminLayout title="广告位管理">
@@ -38,8 +60,12 @@ const fallbackSlots = Object.entries(ADS.slots).map(([slot_key, slot]) => ({
     </form>
 
     <div data-admin hidden>
-      <p data-status class="text-sm opacity-75">读取 BLOG_DB 广告位...</p>
-      <div data-slots class="not-prose grid gap-4"></div>
+      <p class="text-sm opacity-75">
+        这里只控制 5
+        个固定广告位置的开关：页首、页中、页尾、左侧、右侧。默认全部关闭，避免出现满屏广告。
+      </p>
+      <p data-status class="mt-2 text-sm opacity-75">读取 BLOG_DB 广告位...</p>
+      <div data-slots class="not-prose mt-4 grid gap-4"></div>
     </div>
   </div>
 
@@ -83,8 +109,8 @@ const fallbackSlots = Object.entries(ADS.slots).map(([slot_key, slot]) => ({
       return node;
     };
 
-    const makeInputLabel = (text, name, value = "") => {
-      const input = el("input", { name, class: fieldClasses });
+    const makeInputLabel = (text, name, value = "", placeholder = "") => {
+      const input = el("input", { name, class: fieldClasses, placeholder });
       input.value = value || "";
       return el("label", { class: "block text-sm", text }, [input]);
     };
@@ -98,15 +124,22 @@ const fallbackSlots = Object.entries(ADS.slots).map(([slot_key, slot]) => ({
           dataset: { slot: slot.slot_key },
         });
         const title = el("h2", { class: "sm:col-span-2" }, [
+          document.createTextNode(slot.placement || slot.slot_key),
+          document.createTextNode(" "),
           el("code", { text: slot.slot_key }),
         ]);
         const clientId = makeInputLabel(
-          "Client ID",
+          "AdSense Client ID（可空）",
           "clientId",
-          slot.client_id
+          slot.client_id,
+          "ca-pub-xxxxxxxxxx"
         );
-        const slotId = makeInputLabel("Slot ID", "slotId", slot.slot_id);
-        const placement = makeInputLabel("位置", "placement", slot.placement);
+        const slotId = makeInputLabel(
+          "AdSense Slot ID（可空）",
+          "slotId",
+          slot.slot_id,
+          "纯数字"
+        );
         const enabledInput = el("input", {
           name: "enabled",
           type: "checkbox",
@@ -115,7 +148,7 @@ const fallbackSlots = Object.entries(ADS.slots).map(([slot_key, slot]) => ({
         const enabled = el(
           "label",
           { class: "flex items-center gap-2 text-sm" },
-          [enabledInput, document.createTextNode(" 启用")]
+          [enabledInput, document.createTextNode(" 启用这个位置")]
         );
         const notes = el("textarea", { name: "notes", class: fieldClasses });
         notes.value = slot.notes || "";
@@ -136,20 +169,12 @@ const fallbackSlots = Object.entries(ADS.slots).map(([slot_key, slot]) => ({
             class:
               "rounded bg-accent px-4 py-2 text-sm font-semibold text-white",
             type: "submit",
-            text: "保存",
+            text: "保存开关",
           }),
           saveStatus,
         ]);
 
-        form.append(
-          title,
-          clientId,
-          slotId,
-          placement,
-          enabled,
-          notesLabel,
-          actions
-        );
+        form.append(title, clientId, slotId, enabled, notesLabel, actions);
         form.addEventListener("submit", async event => {
           event.preventDefault();
           saveStatus.textContent = "保存中...";
@@ -160,7 +185,7 @@ const fallbackSlots = Object.entries(ADS.slots).map(([slot_key, slot]) => ({
                 clientId: form.clientId.value,
                 slotId: form.slotId.value,
                 enabled: form.enabled.checked,
-                placement: form.placement.value,
+                placement: slot.placement,
                 notes: form.notes.value,
               }),
             });

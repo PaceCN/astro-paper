@@ -71,6 +71,58 @@ import AdminLayout from "@/layouts/AdminLayout.astro";
         </div>
       </form>
 
+      <h2>手动发布请求</h2>
+      <form
+        data-publish-form
+        class="not-prose grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2"
+      >
+        <label class="block text-sm"
+          >发布标题 / 任务名<input
+            name="title"
+            placeholder="例如：发布一篇 Cloudflare D1 后台实践文章"
+            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+            required
+          /></label
+        >
+        <label class="block text-sm"
+          >类型<select
+            name="requestType"
+            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+          >
+            <option value="manual_publish">手动发布</option>
+            <option value="maintenance">维护/整理</option>
+            <option value="refresh_index">同步索引</option>
+          </select></label
+        >
+        <label class="block text-sm sm:col-span-2"
+          >具体要求<textarea
+            name="prompt"
+            rows="5"
+            placeholder="写清楚要整理、维护或发布什么；发布前仍会走验证、提交、推送和后台索引同步。"
+            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+            required></textarea></label
+        >
+        <div class="sm:col-span-2">
+          <button
+            class="rounded bg-accent px-4 py-2 text-sm font-semibold text-white"
+            type="submit">加入发布队列</button
+          ><span data-publish-status class="ml-3 text-sm"></span>
+        </div>
+      </form>
+
+      <h2>发布请求队列</h2>
+      <div class="not-prose overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead
+            ><tr
+              ><th>时间</th><th>标题</th><th>类型</th><th>状态</th><th
+                >结果/错误</th
+              ></tr
+            ></thead
+          >
+          <tbody data-publish-requests></tbody>
+        </table>
+      </div>
       <h2>最近运行</h2>
       <div class="not-prose overflow-x-auto">
         <table class="w-full text-left text-sm">
@@ -106,9 +158,12 @@ import AdminLayout from "@/layouts/AdminLayout.astro";
     const loginError = root?.querySelector("[data-login-error]");
     const status = root?.querySelector("[data-status]");
     const runStatus = root?.querySelector("[data-run-status]");
+    const publishStatus = root?.querySelector("[data-publish-status]");
     const runsBody = root?.querySelector("[data-runs]");
     const auditsBody = root?.querySelector("[data-audits]");
+    const publishBody = root?.querySelector("[data-publish-requests]");
     const runForm = root?.querySelector("[data-run-form]");
+    const publishForm = root?.querySelector("[data-publish-form]");
 
     const api = async (path, options = {}) => {
       const response = await fetch(`/api/admin/${path}`, {
@@ -185,19 +240,39 @@ import AdminLayout from "@/layouts/AdminLayout.astro";
       );
     };
 
+    const renderPublishRequests = requests => {
+      if (!requests.length) return emptyRow(publishBody, 5);
+      publishBody.replaceChildren(
+        ...requests.map(request => {
+          const tr = document.createElement("tr");
+          tr.append(
+            cell(request.created_at),
+            cell(request.title),
+            cell(request.request_type),
+            cell(request.status),
+            cell(request.error || request.result_summary)
+          );
+          return tr;
+        })
+      );
+    };
+
     const load = async () => {
       try {
-        const [runs, audits] = await Promise.all([
+        const [runs, audits, publishRequests] = await Promise.all([
           api("automation-runs"),
           api("date-audit"),
+          api("publish-requests"),
         ]);
         renderRuns(runs.runs);
         renderAudits(audits.audits);
+        renderPublishRequests(publishRequests.requests);
         status.textContent = "已从 BLOG_DB 读取自动化运行记录和日期审计。";
       } catch (error) {
         status.textContent = `D1 暂不可用：${error.message}`;
         renderRuns([]);
         renderAudits([]);
+        renderPublishRequests([]);
       }
     };
 
@@ -239,6 +314,8 @@ import AdminLayout from "@/layouts/AdminLayout.astro";
             runType: runForm.runType.value,
             status: runForm.status.value,
             stage: runForm.stage.value,
+            triggerSource: "manual_admin",
+            requestedBy: "admin",
             notes: runForm.notes.value,
           }),
         });
@@ -247,6 +324,27 @@ import AdminLayout from "@/layouts/AdminLayout.astro";
         await load();
       } catch (error) {
         runStatus.textContent = error.message;
+      }
+    });
+
+    publishForm?.addEventListener("submit", async event => {
+      event.preventDefault();
+      publishStatus.textContent = "加入队列中...";
+      try {
+        await api("publish-requests", {
+          method: "POST",
+          body: JSON.stringify({
+            title: publishForm.title.value,
+            requestType: publishForm.requestType.value,
+            prompt: publishForm.prompt.value,
+            requestedBy: "admin",
+          }),
+        });
+        publishStatus.textContent = "已加入队列，后续由 Agent 领取执行";
+        publishForm.reset();
+        await load();
+      } catch (error) {
+        publishStatus.textContent = error.message;
       }
     });
 

@@ -13,7 +13,8 @@
     "lint": "eslint .",
     "validate:dates": "node scripts/validate-post-dates.mjs",
     "export:posts-index": "node scripts/export-posts-index.mjs",
-    "sync:posts-index": "node scripts/sync-posts-index-to-admin.mjs"
+    "sync:posts-index": "node scripts/sync-posts-index-to-admin.mjs",
+    "admin:publish-requests": "node scripts/fetch-publish-requests.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.14",

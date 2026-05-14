@@ -1,5 +1,6 @@
 export type Env = {
   ADMIN_PASSWORD?: string;
+  ADMIN_API_TOKEN?: string;
   BLOG_DB?: D1Database;
 };
 
@@ -93,10 +94,32 @@ export function clearSessionCookie(request: Request) {
   return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure ? "; Secure" : ""}`;
 }
 
+export async function verifyApiToken(request: Request, token: string | undefined) {
+  if (!token) return false;
+  const auth = request.headers.get("authorization") ?? "";
+  const bearer = auth.match(/^Bearer\s+(.+)$/i)?.[1];
+  const supplied = bearer || request.headers.get("x-admin-api-token") || "";
+  return supplied === token;
+}
+
+function sameOriginWrite(request: Request) {
+  if (request.method === "GET" || request.method === "HEAD" || request.method === "OPTIONS") return true;
+  const origin = request.headers.get("origin");
+  if (!origin) return true;
+  return origin === new URL(request.url).origin;
+}
+
 export async function requireAuth(context: AdminContext) {
   const authenticated = await verifySession(context.request, context.env.ADMIN_PASSWORD);
   if (!authenticated) return json({ error: "Unauthorized" }, { status: 401 });
+  if (!sameOriginWrite(context.request)) return json({ error: "Bad origin" }, { status: 403 });
   return null;
+}
+
+export async function requireApiAuth(context: AdminContext) {
+  const apiAuthenticated = await verifyApiToken(context.request, context.env.ADMIN_API_TOKEN);
+  if (apiAuthenticated) return null;
+  return requireAuth(context);
 }
 
 export function requireDb(env: Env) {
@@ -109,6 +132,20 @@ export function requireDb(env: Env) {
 export async function withAdminApi(context: AdminContext, handler: () => Promise<Response> | Response) {
   try {
     const unauthorized = await requireAuth(context);
+    if (unauthorized) return unauthorized;
+
+    return await handler();
+  } catch (error) {
+    return json(
+      { error: error instanceof Error ? error.message : "Unexpected admin API error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function withAgentOrAdminApi(context: AdminContext, handler: () => Promise<Response> | Response) {
+  try {
+    const unauthorized = await requireApiAuth(context);
     if (unauthorized) return unauthorized;
 
     return await handler();

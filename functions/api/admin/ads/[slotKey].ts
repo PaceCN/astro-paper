@@ -1,18 +1,11 @@
 import { json, methodNotAllowed, readBody, requireDb, withAdminApi, type AdminContext } from "../_utils";
+import { ALLOWED_AD_SLOT_KEYS } from "./slots";
 
 type SlotContext = AdminContext & {
   params: {
     slotKey?: string;
   };
 };
-
-const ALLOWED_SLOTS = new Set([
-  "homeAfterHero",
-  "homeAfterRecent",
-  "postTop",
-  "postMiddle",
-  "postBottom",
-]);
 
 function cleanString(value: unknown) {
   return String(value ?? "").trim();
@@ -35,7 +28,7 @@ export function onRequestPut(context: SlotContext) {
 
     const slotKey = cleanString(context.params.slotKey);
     if (!slotKey) return json({ error: "slotKey is required" }, { status: 400 });
-    if (!ALLOWED_SLOTS.has(slotKey)) return json({ error: "Unknown ad slot" }, { status: 400 });
+    if (!ALLOWED_AD_SLOT_KEYS.has(slotKey)) return json({ error: "Unknown ad slot" }, { status: 400 });
 
     const body = await readBody(context.request);
     const clientId = cleanString(body.client_id || body.clientId);
@@ -57,7 +50,7 @@ export function onRequestPut(context: SlotContext) {
     )
       .bind(
         slotKey,
-        cleanString(body.provider || "google-adsense"),
+        "google-adsense",
         clientId,
         slotId,
         body.enabled ? 1 : 0,

@@ -86,6 +86,41 @@ corepack pnpm run sync:posts-index
 
 如果同步失败，文章仍以 Git/Cloudflare Pages 发布结果为准，但后台文章列表可能暂时滞后；需要在 `docs/AUTOMATION_STATUS.md` 记录 blocker。
 
+## 广告控制
+
+后台只保留 5 个固定广告位开关，避免出现不可控的满屏广告：
+
+- `pageTop`：页首
+- `pageMiddle`：页中
+- `pageBottom`：页尾
+- `leftRail`：左侧
+- `rightRail`：右侧
+
+每个位置默认关闭。后台可保存该位置的 AdSense client/slot 和开关状态；前台接入时必须只读取这 5 个位置，不允许自动新增任意广告位。
+
+## 手动发布与 Agent API
+
+后台“自动化”页可以新增手动发布请求，写入 `publish_requests` 队列。队列不会在浏览器里直接持有 GitHub token，也不会让前端直接改文件；后续由 Agent 使用受控 API 领取、整理、验证、提交、推送和同步索引。
+
+Agent 调用 API 时使用 Cloudflare 环境变量 `ADMIN_API_TOKEN`：
+
+```http
+Authorization: Bearer <ADMIN_API_TOKEN>
+```
+
+本地查看待处理发布请求：
+
+```bash
+PACE_NOTES_ADMIN_URL=https://astro-paper-18u.pages.dev PACE_NOTES_ADMIN_API_TOKEN=<token> corepack pnpm run admin:publish-requests
+```
+
+安全边界：
+
+- Web 后台使用 `ADMIN_PASSWORD` 登录后 httpOnly cookie 认证。
+- Agent/API 使用 `ADMIN_API_TOKEN`，不要写入仓库。
+- 写 API 会检查同源后台请求；跨站网页不能直接借 cookie 写入。
+- 发布按钮只创建队列请求，不直接发布，最终仍必须经过 Agent 的内容审查、构建验证、git push 和 D1 索引同步。
+
 ## 后台 API 约定
 
 - `GET /api/admin/posts`：读取 D1 文章索引。
@@ -93,6 +128,5 @@ corepack pnpm run sync:posts-index
 - `POST /api/admin/posts/import`：批量导入索引，可传 `replace: true` 重建索引。
 - `GET|POST|PATCH /api/admin/automation-runs`：记录自动化运行状态。
 - `GET|POST /api/admin/date-audit`：读取或写入日期变更审计。
-- `GET /api/admin/ads`、`PUT /api/admin/ads/:slotKey`：管理广告位配置。
-
-注意：当前广告位配置先作为后台管理数据保存；前台广告是否展示仍受 `src/config.ts` 中 `ADS` 构建时配置控制。正式让后台广告配置影响前台前，需要增加运行时公开配置 API 或构建期注入步骤。
+- `GET /api/admin/ads`、`PUT /api/admin/ads/:slotKey`：管理 5 个固定广告位。
+- `GET|POST|PATCH /api/admin/publish-requests`：发布/维护请求队列，支持后台 cookie 或 Agent API token。

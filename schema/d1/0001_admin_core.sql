@@ -49,11 +49,17 @@ CREATE TABLE IF NOT EXISTS automation_runs (
   run_type TEXT NOT NULL,
   status TEXT NOT NULL,
   stage TEXT NOT NULL DEFAULT '',
+  trigger_source TEXT NOT NULL DEFAULT '',
+  requested_by TEXT NOT NULL DEFAULT '',
   started_at TEXT,
   finished_at TEXT,
   duration_ms INTEGER,
   draft_path TEXT,
+  post_slug TEXT,
+  published_url TEXT,
   commit_sha TEXT,
+  validation_summary TEXT,
+  source_count INTEGER,
   error TEXT,
   notes TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -74,8 +80,8 @@ CREATE TABLE IF NOT EXISTS post_date_audit (
 );
 
 INSERT OR IGNORE INTO ad_slots (slot_key, placement, notes) VALUES
-  ('homeAfterHero', '首页介绍后', '低干扰展示位，申请通过前保持关闭'),
-  ('homeAfterRecent', '首页最新文章后', '列表之后展示，避免首屏广告过重'),
-  ('postTop', '文章标题下', '谨慎启用，避免影响首屏体验'),
-  ('postMiddle', '文章正文中段', '后续按文章长度动态启用'),
-  ('postBottom', '文章正文后', '优先推荐的低干扰广告位');
+  ('pageTop', '页首', '页面顶部广告开关'),
+  ('pageMiddle', '页中', '正文或列表中部广告开关'),
+  ('pageBottom', '页尾', '页面底部广告开关'),
+  ('leftRail', '左侧', '桌面端左侧悬浮/侧栏广告开关'),
+  ('rightRail', '右侧', '桌面端右侧悬浮/侧栏广告开关');
