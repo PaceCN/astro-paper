@@ -24,11 +24,13 @@ export function onRequestGet(context: AdminContext) {
     const { results } = await context.env.BLOG_DB!.prepare(
       `SELECT slot_key, provider, client_id, slot_id, enabled, placement, notes, updated_at
        FROM ad_slots WHERE slot_key IN (${placeholders}) ORDER BY CASE slot_key
-         WHEN 'pageTop' THEN 1
-         WHEN 'pageMiddle' THEN 2
-         WHEN 'pageBottom' THEN 3
-         WHEN 'leftRail' THEN 4
-         WHEN 'rightRail' THEN 5
+         WHEN 'homeAfterHero' THEN 1
+         WHEN 'homeAfterRecent' THEN 2
+         WHEN 'postTop' THEN 3
+         WHEN 'postMiddle' THEN 4
+         WHEN 'postBottom' THEN 5
+         WHEN 'leftRail' THEN 6
+         WHEN 'rightRail' THEN 7
          ELSE 99 END`
     )
       .bind(...keys)

@@ -1,60 +1,591 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import Header from "@/components/Header.astro";
-import Footer from "@/components/Footer.astro";
 import { SITE } from "@/config";
 
 type Props = {
   title: string;
   description?: string;
+  eyebrow?: string;
 };
 
-const { title, description = "Pace Notes 后台管理。" } = Astro.props;
+const {
+  title,
+  description = "Pace Notes 后台管理。",
+  eyebrow = "Pace Notes 后台",
+} = Astro.props;
 const adminBasePath = import.meta.env.PUBLIC_ADMIN_BASE_PATH || "/admin";
 const normalizedAdminBasePath = adminBasePath.startsWith("/")
   ? adminBasePath
   : `/${adminBasePath}`;
+const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/";
 const nav = [
-  [normalizedAdminBasePath, "总览"],
-  [`${normalizedAdminBasePath}/posts`, "文章"],
-  [`${normalizedAdminBasePath}/ads`, "广告"],
-  [`${normalizedAdminBasePath}/automation`, "自动化"],
+  {
+    href: normalizedAdminBasePath,
+    label: "总览",
+    match: normalizedAdminBasePath,
+  },
+  {
+    href: `${normalizedAdminBasePath}/posts`,
+    label: "文章/发布",
+    match: `${normalizedAdminBasePath}/posts`,
+  },
+  {
+    href: `${normalizedAdminBasePath}/ads`,
+    label: "Google 广告",
+    match: `${normalizedAdminBasePath}/ads`,
+  },
+  {
+    href: `${normalizedAdminBasePath}/automation`,
+    label: "自动化",
+    match: `${normalizedAdminBasePath}/automation`,
+  },
 ];
 ---
 
 <Layout title={`${title} | 后台 | ${SITE.title}`} description={description}>
-  <Header />
-  <main id="main-content" class="app-layout py-8">
-    <div class="mb-6 rounded-lg border border-border bg-background p-4">
-      <p class="text-sm font-semibold text-accent">Pace Notes 后台</p>
-      <p class="mt-1 text-sm opacity-80">
-        页面可以公开访问，但所有后台 API 读写都需要通过 <code
-          >ADMIN_PASSWORD</code
-        >
-        登录后由 httpOnly cookie 认证。
-      </p>
-      <nav class="mt-4 flex flex-wrap gap-3 text-sm">
+  <main id="main-content" class="admin-shell">
+    <aside class="admin-sidebar" aria-label="后台导航">
+      <a class="admin-brand" href={normalizedAdminBasePath}>
+        <span class="admin-brand-mark">PN</span>
+        <span>
+          <strong>Pace Notes</strong>
+          <small>后台控制台</small>
+        </span>
+      </a>
+      <nav class="admin-nav">
         {
-          nav.map(([href, label]) => (
-            <a href={href} class="hover:text-accent">
-              {label}
-            </a>
-          ))
+          nav.map(item => {
+            const active =
+              item.match === normalizedAdminBasePath
+                ? currentPath === item.match
+                : currentPath.startsWith(item.match);
+            return (
+              <a
+                class:list={["admin-nav-link", active && "is-active"]}
+                href={item.href}
+              >
+                {item.label}
+              </a>
+            );
+          })
         }
       </nav>
-      {
-        normalizedAdminBasePath !== "/admin" && (
-          <p class="mt-3 text-xs opacity-70">
-            当前构建后台路径：<code>{normalizedAdminBasePath}</code>。Astro
-            静态路由需要重新部署后生效。
-          </p>
-        )
-      }
-    </div>
-    <section class="app-prose max-w-none">
-      <h1>{title}</h1>
+      <div class="admin-auth-note">
+        <strong>登录要求</strong>
+        <p>
+          页面可访问，所有后台 API 读写仍需 ADMIN_PASSWORD 登录后的 httpOnly
+          cookie。
+        </p>
+        {
+          normalizedAdminBasePath !== "/admin" && (
+            <p>
+              当前构建后台路径：<code>{normalizedAdminBasePath}</code>
+              。修改路径后需重新构建/部署。
+            </p>
+          )
+        }
+      </div>
+    </aside>
+
+    <section class="admin-main">
+      <header class="admin-topbar">
+        <div>
+          <p class="admin-eyebrow">{eyebrow}</p>
+          <h1>{title}</h1>
+          <p>{description}</p>
+        </div>
+        <button
+          class="admin-btn admin-btn-secondary"
+          type="button"
+          data-logout
+          hidden
+        >
+          退出登录
+        </button>
+      </header>
+      <script is:inline src="/admin.js"></script>
       <slot />
     </section>
   </main>
-  <Footer />
+  <script is:inline>
+    const logoutButton = document.querySelector("[data-logout]");
+    document.addEventListener("admin-auth-change", event => {
+      if (logoutButton) logoutButton.hidden = !event.detail?.authenticated;
+    });
+    logoutButton?.addEventListener("click", async () => {
+      try {
+        await window.PaceAdmin.api("logout", { method: "POST" });
+      } finally {
+        window.location.reload();
+      }
+    });
+  </script>
+
+  <style is:global>
+    :root {
+      --admin-surface: color-mix(in srgb, var(--color-fill) 94%, white 6%);
+      --admin-surface-strong: color-mix(
+        in srgb,
+        var(--color-fill) 88%,
+        white 12%
+      );
+      --admin-muted: color-mix(in srgb, currentColor 64%, transparent);
+      --admin-danger: #dc2626;
+      --admin-success: #16a34a;
+      --admin-warning: #ca8a04;
+      --admin-radius: 1rem;
+      --admin-shadow: 0 18px 45px rgb(15 23 42 / 8%);
+    }
+
+    [data-theme="dark"] {
+      --admin-surface: color-mix(in srgb, var(--color-fill) 88%, white 4%);
+      --admin-surface-strong: color-mix(
+        in srgb,
+        var(--color-fill) 78%,
+        white 8%
+      );
+      --admin-shadow: 0 18px 45px rgb(0 0 0 / 30%);
+    }
+
+    .admin-shell {
+      min-height: 100vh;
+      background:
+        radial-gradient(
+          circle at top left,
+          rgb(34 197 94 / 10%),
+          transparent 30rem
+        ),
+        var(--color-fill);
+      display: grid;
+      grid-template-columns: minmax(14rem, 17rem) 1fr;
+      color: var(--color-text-base);
+    }
+
+    .admin-sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      border-right: 1px solid var(--color-border);
+      background: var(--admin-surface);
+      padding: 1.25rem;
+      overflow-y: auto;
+    }
+
+    .admin-brand {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      text-decoration: none;
+      color: inherit;
+      margin-bottom: 1.25rem;
+    }
+
+    .admin-brand-mark {
+      display: grid;
+      place-items: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 0.875rem;
+      background: var(--color-accent);
+      color: white;
+      font-weight: 800;
+    }
+
+    .admin-brand strong,
+    .admin-brand small {
+      display: block;
+      line-height: 1.2;
+    }
+
+    .admin-brand small,
+    .admin-eyebrow,
+    .admin-muted {
+      color: var(--admin-muted);
+      font-size: 0.875rem;
+    }
+
+    .admin-nav {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .admin-nav-link {
+      display: block;
+      border-radius: 0.75rem;
+      padding: 0.75rem 0.875rem;
+      text-decoration: none;
+      color: inherit;
+      font-weight: 650;
+    }
+
+    .admin-nav-link:hover,
+    .admin-nav-link.is-active {
+      background: var(--admin-surface-strong);
+      color: var(--color-accent);
+    }
+
+    .admin-auth-note {
+      margin-top: 1.5rem;
+      border: 1px solid var(--color-border);
+      border-radius: 0.875rem;
+      padding: 0.875rem;
+      font-size: 0.875rem;
+      color: var(--admin-muted);
+    }
+
+    .admin-auth-note p {
+      margin: 0.5rem 0 0;
+    }
+
+    .admin-main {
+      width: min(100%, 82rem);
+      padding: 1.5rem;
+    }
+
+    .admin-topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--admin-radius);
+      background: var(--admin-surface);
+      box-shadow: var(--admin-shadow);
+      padding: clamp(1rem, 3vw, 1.5rem);
+    }
+
+    .admin-topbar h1 {
+      margin: 0.15rem 0 0.35rem;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      line-height: 1.05;
+    }
+
+    .admin-topbar p {
+      margin: 0;
+    }
+
+    .admin-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .admin-grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .admin-grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .admin-card,
+    .admin-login-card {
+      border: 1px solid var(--color-border);
+      border-radius: var(--admin-radius);
+      background: var(--admin-surface);
+      box-shadow: var(--admin-shadow);
+      padding: clamp(1rem, 3vw, 1.25rem);
+    }
+
+    .admin-card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .admin-card h2,
+    .admin-card h3 {
+      margin: 0;
+    }
+
+    .admin-card p {
+      margin: 0.35rem 0 0;
+      color: var(--admin-muted);
+    }
+
+    .admin-stat {
+      min-height: 7rem;
+    }
+
+    .admin-stat strong {
+      display: block;
+      color: var(--admin-muted);
+      font-size: 0.875rem;
+    }
+
+    .admin-stat span {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: clamp(1.6rem, 4vw, 2.25rem);
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .admin-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .admin-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      min-height: 2.65rem;
+      border-radius: 0.75rem;
+      border: 1px solid transparent;
+      padding: 0.65rem 1rem;
+      font-weight: 750;
+      text-decoration: none;
+      cursor: pointer;
+      transition:
+        transform 0.15s ease,
+        opacity 0.15s ease,
+        background 0.15s ease;
+    }
+
+    .admin-btn:hover {
+      transform: translateY(-1px);
+      text-decoration: none;
+    }
+
+    .admin-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+      transform: none;
+    }
+
+    .admin-btn-primary {
+      background: var(--color-accent);
+      color: white;
+    }
+
+    .admin-btn-secondary {
+      border-color: var(--color-border);
+      background: var(--admin-surface-strong);
+      color: inherit;
+    }
+
+    .admin-btn-danger {
+      background: var(--admin-danger);
+      color: white;
+    }
+
+    .admin-btn-subtle {
+      background: transparent;
+      border-color: var(--color-border);
+      color: var(--admin-muted);
+    }
+
+    .admin-field {
+      display: grid;
+      gap: 0.4rem;
+      font-size: 0.925rem;
+      font-weight: 650;
+    }
+
+    .admin-field input,
+    .admin-field select,
+    .admin-field textarea,
+    .admin-input {
+      width: 100%;
+      border: 1px solid var(--color-border);
+      border-radius: 0.75rem;
+      background: var(--color-fill);
+      color: inherit;
+      padding: 0.75rem 0.875rem;
+      font: inherit;
+      font-weight: 500;
+    }
+
+    .admin-field textarea {
+      min-height: 8rem;
+      resize: vertical;
+    }
+
+    .admin-field small {
+      color: var(--admin-muted);
+      font-weight: 500;
+    }
+
+    .admin-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--color-border);
+      border-radius: 0.875rem;
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 48rem;
+      font-size: 0.925rem;
+    }
+
+    .admin-table th,
+    .admin-table td {
+      border-bottom: 1px solid var(--color-border);
+      padding: 0.8rem 0.875rem;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .admin-table th {
+      color: var(--admin-muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .admin-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .admin-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      background: color-mix(in srgb, currentColor 10%, transparent);
+      color: var(--admin-muted);
+      padding: 0.25rem 0.6rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .admin-badge-success {
+      color: var(--admin-success);
+    }
+
+    .admin-badge-danger {
+      color: var(--admin-danger);
+    }
+
+    .admin-badge-warning {
+      color: var(--admin-warning);
+    }
+
+    .admin-message {
+      margin-top: 0.75rem;
+      border-radius: 0.75rem;
+      padding: 0.75rem 0.875rem;
+      font-size: 0.925rem;
+      font-weight: 650;
+    }
+
+    .admin-message-muted {
+      background: var(--admin-surface-strong);
+      color: var(--admin-muted);
+    }
+
+    .admin-message-success {
+      background: color-mix(in srgb, var(--admin-success) 12%, transparent);
+      color: var(--admin-success);
+    }
+
+    .admin-message-danger {
+      background: color-mix(in srgb, var(--admin-danger) 12%, transparent);
+      color: var(--admin-danger);
+    }
+
+    .admin-message-warning {
+      background: color-mix(in srgb, var(--admin-warning) 13%, transparent);
+      color: var(--admin-warning);
+    }
+
+    .admin-empty {
+      color: var(--admin-muted);
+      text-align: center;
+      padding: 1.5rem !important;
+    }
+
+    .admin-login-card {
+      max-width: 32rem;
+    }
+
+    .admin-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .admin-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .admin-switch input {
+      width: 1.35rem;
+      height: 1.35rem;
+      accent-color: var(--color-accent);
+    }
+
+    .admin-code-box {
+      display: block;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      border: 1px solid var(--color-border);
+      border-radius: 0.75rem;
+      background: var(--color-fill);
+      padding: 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 960px) {
+      .admin-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .admin-sidebar {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--color-border);
+      }
+
+      .admin-nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .admin-grid-3,
+      .admin-grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .admin-main,
+      .admin-sidebar {
+        padding: 1rem;
+      }
+
+      .admin-topbar,
+      .admin-card-header {
+        display: grid;
+      }
+
+      .admin-grid-2,
+      .admin-grid-3,
+      .admin-grid-4,
+      .admin-nav {
+        grid-template-columns: 1fr;
+      }
+
+      .admin-actions,
+      .admin-btn {
+        width: 100%;
+      }
+    }
+  </style>
 </Layout>

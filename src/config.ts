@@ -27,8 +27,8 @@ export const ADS = {
   provider: "adsense",
   googleClient: "",
   slots: {
-    homeAfterHero: { label: "首页主视觉后", enabled: false, slot: "" },
-    homeAfterRecent: { label: "首页最新文章后", enabled: false, slot: "" },
+    homeAfterHero: { label: "首页介绍后", enabled: false, slot: "" },
+    homeAfterRecent: { label: "首页最近文章后", enabled: false, slot: "" },
     postTop: { label: "文章顶部", enabled: false, slot: "" },
     postMiddle: { label: "文章中部", enabled: false, slot: "" },
     postBottom: { label: "文章底部", enabled: false, slot: "" },

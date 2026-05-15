@@ -16,6 +16,7 @@
 
 - 配置：`src/config.ts` 中的 `ADS`。
 - 组件：`src/components/AdSlot.astro`。
-- 目前广告位：`homeAfterHero`、`homeAfterRecent`、`postTop`、`postMiddle`、`postBottom`。
+- 前台已渲染广告位：`homeAfterHero`、`homeAfterRecent`、`postTop`、`postMiddle`、`postBottom`。
+- 后台还可维护 `leftRail`、`rightRail` 两个桌面侧栏候选位，但当前前台组件未默认渲染。
 
 未配置时，开发环境显示占位提示；生产环境不输出内容。

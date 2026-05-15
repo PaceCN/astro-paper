@@ -1,313 +1,308 @@
 ---
 import AdminLayout from "@/layouts/AdminLayout.astro";
+
+const adminBasePath = import.meta.env.PUBLIC_ADMIN_BASE_PATH || "/admin";
+const normalizedAdminBasePath = adminBasePath.startsWith("/")
+  ? adminBasePath
+  : `/${adminBasePath}`;
 ---
 
-<AdminLayout title="自动化与日期审计">
-  <div id="automation-admin">
-    <form
-      data-login
-      class="not-prose max-w-md rounded-lg border border-border p-4"
-      hidden
-    >
-      <label class="block text-sm font-semibold" for="automation-admin-password"
-        >后台密码</label
-      >
-      <input
-        id="automation-admin-password"
-        name="password"
-        type="password"
-        class="mt-2 w-full rounded border border-border bg-background px-3 py-2"
-        required
-      />
-      <button
-        class="mt-3 rounded bg-accent px-4 py-2 text-sm font-semibold text-white"
-        type="submit">登录</button
-      >
-      <p data-login-error class="mt-2 text-sm text-red-600" hidden></p>
-    </form>
-
-    <div data-admin hidden>
-      <p data-status class="text-sm opacity-75">读取自动化运行记录...</p>
-
-      <h2>写入运行记录</h2>
-      <form
-        data-run-form
-        class="not-prose grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-3"
-      >
-        <label class="block text-sm"
-          >类型<input
-            name="runType"
-            placeholder="morning"
-            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+<AdminLayout
+  title="自动化与日期审计"
+  description="查看自动化运行、日期审计和发布请求队列；发布请求表单统一放在文章/发布页。"
+>
+  <div id="automation-admin" class="admin-grid">
+    <section class="admin-login-card" data-login-card hidden>
+      <h2>需要后台密码</h2>
+      <p class="admin-muted">
+        登录后才能读取自动化运行记录、日期审计和发布队列。
+      </p>
+      <form data-login class="admin-grid">
+        <label class="admin-field" for="automation-admin-password">
+          后台密码
+          <input
+            id="automation-admin-password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
             required
-          /></label
+          />
+        </label>
+        <button class="admin-btn admin-btn-primary" type="submit"
+          >登录后台</button
         >
-        <label class="block text-sm"
-          >状态<input
-            name="status"
-            placeholder="published"
-            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-            required
-          /></label
-        >
-        <label class="block text-sm"
-          >阶段<input
-            name="stage"
-            placeholder="done"
-            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-          /></label
-        >
-        <label class="block text-sm sm:col-span-3"
-          >备注<input
-            name="notes"
-            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-          /></label
-        >
-        <div class="sm:col-span-3">
-          <button
-            class="rounded bg-accent px-4 py-2 text-sm font-semibold text-white"
-            type="submit">记录</button
-          ><span data-run-status class="ml-3 text-sm"></span>
-        </div>
+        <p data-login-error hidden></p>
       </form>
+    </section>
 
-      <h2>手动发布请求</h2>
-      <form
-        data-publish-form
-        class="not-prose grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2"
-      >
-        <label class="block text-sm"
-          >发布标题 / 任务名<input
-            name="title"
-            placeholder="例如：发布一篇 Cloudflare D1 后台实践文章"
-            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-            required
-          /></label
-        >
-        <label class="block text-sm"
-          >类型<select
-            name="requestType"
-            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+    <div data-admin hidden class="admin-grid">
+      <section class="admin-card">
+        <div class="admin-card-header">
+          <div>
+            <h2>运行记录写入</h2>
+            <p>用于人工补记自动化运行结果；不负责发布正文。</p>
+          </div>
+          <a
+            class="admin-btn admin-btn-primary"
+            href={`${normalizedAdminBasePath}/posts#new-publish-request`}
           >
-            <option value="manual_publish">手动发布</option>
-            <option value="maintenance">维护/整理</option>
-            <option value="refresh_index">同步索引</option>
-          </select></label
-        >
-        <label class="block text-sm sm:col-span-2"
-          >具体要求<textarea
-            name="prompt"
-            rows="5"
-            placeholder="写清楚要整理、维护或发布什么；发布前仍会走验证、提交、推送和后台索引同步。"
-            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-            required></textarea></label
-        >
-        <div class="sm:col-span-2">
-          <button
-            class="rounded bg-accent px-4 py-2 text-sm font-semibold text-white"
-            type="submit">加入发布队列</button
-          ><span data-publish-status class="ml-3 text-sm"></span>
+            新建发布请求
+          </a>
         </div>
-      </form>
+        <form data-run-form class="admin-grid admin-grid-3">
+          <label class="admin-field">
+            类型
+            <input name="runType" placeholder="morning" required />
+          </label>
+          <label class="admin-field">
+            状态
+            <select name="status" required>
+              <option value="published">published</option>
+              <option value="running">running</option>
+              <option value="failed">failed</option>
+              <option value="blocked">blocked</option>
+            </select>
+          </label>
+          <label class="admin-field">
+            阶段
+            <input name="stage" placeholder="done" />
+          </label>
+          <label class="admin-field" style="grid-column: 1 / -1;">
+            备注 / 错误摘要
+            <input
+              name="notes"
+              placeholder="例如：已发布并同步索引，或记录失败原因"
+            />
+          </label>
+          <div class="admin-actions" style="grid-column: 1 / -1;">
+            <button class="admin-btn admin-btn-primary" type="submit"
+              >记录运行结果</button
+            >
+            <button class="admin-btn admin-btn-subtle" type="reset">清空</button
+            >
+          </div>
+          <p data-run-status hidden style="grid-column: 1 / -1;"></p>
+        </form>
+      </section>
 
-      <h2>发布请求队列</h2>
-      <div class="not-prose overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead
-            ><tr
-              ><th>时间</th><th>标题</th><th>类型</th><th>状态</th><th
-                >结果/错误</th
-              ></tr
-            ></thead
-          >
-          <tbody data-publish-requests></tbody>
-        </table>
-      </div>
-      <h2>最近运行</h2>
-      <div class="not-prose overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead
-            ><tr
-              ><th>时间</th><th>类型</th><th>状态</th><th>阶段</th><th>草稿</th
-              ><th>备注/错误</th></tr
-            ></thead
-          >
-          <tbody data-runs></tbody>
-        </table>
-      </div>
+      <section class="admin-card">
+        <div class="admin-card-header">
+          <div>
+            <h2>发布请求队列</h2>
+            <p>这里只读展示队列；创建请求请去“文章/发布”。</p>
+          </div>
+          <div class="admin-actions">
+            <button
+              class="admin-btn admin-btn-secondary"
+              type="button"
+              data-refresh
+            >
+              刷新
+            </button>
+            <a
+              class="admin-btn admin-btn-primary"
+              href={`${normalizedAdminBasePath}/posts#new-publish-request`}
+            >
+              新建发布请求
+            </a>
+          </div>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>状态</th>
+                <th>标题</th>
+                <th>类型</th>
+                <th>目标 slug</th>
+                <th>创建时间</th>
+                <th>结果/错误</th>
+              </tr>
+            </thead>
+            <tbody data-publish-requests></tbody>
+          </table>
+        </div>
+      </section>
 
-      <h2>日期审计</h2>
-      <div class="not-prose overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead
-            ><tr
-              ><th>时间</th><th>文件</th><th>pubDatetime</th><th>modDatetime</th
-              ><th>原因</th><th>操作者</th></tr
-            ></thead
-          >
-          <tbody data-audits></tbody>
-        </table>
-      </div>
+      <section class="admin-card">
+        <div class="admin-card-header">
+          <div>
+            <h2>最近自动化运行</h2>
+            <p>失败记录会直接显示 error 或备注。</p>
+          </div>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>状态</th>
+                <th>时间</th>
+                <th>类型</th>
+                <th>阶段</th>
+                <th>草稿 / slug</th>
+                <th>备注 / 错误</th>
+              </tr>
+            </thead>
+            <tbody data-runs></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="admin-card">
+        <div class="admin-card-header">
+          <div>
+            <h2>日期审计</h2>
+            <p>记录 pubDatetime / modDatetime 的人工或自动修正。</p>
+          </div>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>文件</th>
+                <th>pubDatetime</th>
+                <th>modDatetime</th>
+                <th>原因</th>
+                <th>操作者</th>
+              </tr>
+            </thead>
+            <tbody data-audits></tbody>
+          </table>
+        </div>
+        <p data-status hidden></p>
+      </section>
     </div>
   </div>
 
   <script is:inline>
     const root = document.querySelector("#automation-admin");
-    const loginForm = root?.querySelector("[data-login]");
-    const admin = root?.querySelector("[data-admin]");
-    const loginError = root?.querySelector("[data-login-error]");
+    const { api, badge, emptyTableRow, escapeHtml, formatDate, setStatus } =
+      window.PaceAdmin;
     const status = root?.querySelector("[data-status]");
     const runStatus = root?.querySelector("[data-run-status]");
-    const publishStatus = root?.querySelector("[data-publish-status]");
     const runsBody = root?.querySelector("[data-runs]");
     const auditsBody = root?.querySelector("[data-audits]");
     const publishBody = root?.querySelector("[data-publish-requests]");
     const runForm = root?.querySelector("[data-run-form]");
-    const publishForm = root?.querySelector("[data-publish-form]");
-
-    const api = async (path, options = {}) => {
-      const response = await fetch(`/api/admin/${path}`, {
-        credentials: "same-origin",
-        headers: {
-          "content-type": "application/json",
-          ...(options.headers || {}),
-        },
-        ...options,
-      });
-      const data = await response.json();
-      if (!response.ok)
-        throw new Error(data.error || `API failed: ${response.status}`);
-      return data;
-    };
-
-    const cell = (text, code = false) => {
-      const td = document.createElement("td");
-      if (code) {
-        const codeEl = document.createElement("code");
-        codeEl.textContent = text || "-";
-        td.append(codeEl);
-      } else {
-        td.textContent = text || "-";
-      }
-      return td;
-    };
-
-    const emptyRow = (tbody, span) => {
-      const tr = document.createElement("tr");
-      const td = cell("暂无记录");
-      td.colSpan = span;
-      tr.append(td);
-      tbody.replaceChildren(tr);
-    };
 
     const renderRuns = runs => {
-      if (!runs.length) return emptyRow(runsBody, 6);
-      runsBody.replaceChildren(
-        ...runs.map(run => {
-          const tr = document.createElement("tr");
-          tr.append(
-            cell(run.created_at),
-            cell(run.run_type),
-            cell(run.status),
-            cell(run.stage),
-            cell(run.draft_path, true),
-            cell(run.error || run.notes)
-          );
-          return tr;
-        })
-      );
+      if (!runs.length)
+        return emptyTableRow(
+          runsBody,
+          6,
+          "暂无自动化运行记录。运行 Agent/cron 后会出现在这里。"
+        );
+      runsBody.innerHTML = runs
+        .map(
+          run => `<tr>
+          <td>${badge(run.status, run.status || "-")}</td>
+          <td>${escapeHtml(formatDate(run.created_at || run.started_at))}</td>
+          <td>${escapeHtml(run.run_type || "-")}</td>
+          <td>${escapeHtml(run.stage || "-")}</td>
+          <td><code>${escapeHtml(run.post_slug || run.draft_path || "-")}</code></td>
+          <td>${run.error ? badge("failed", "error") + " " : ""}${escapeHtml(run.error || run.notes || run.validation_summary || "-")}</td>
+        </tr>`
+        )
+        .join("");
     };
 
     const renderAudits = audits => {
-      if (!audits.length) return emptyRow(auditsBody, 6);
-      auditsBody.replaceChildren(
-        ...audits.map(audit => {
-          const tr = document.createElement("tr");
-          tr.append(
-            cell(audit.created_at),
-            cell(audit.source_path, true),
-            cell(
-              `${audit.old_pub_datetime || "-"} → ${audit.new_pub_datetime || "-"}`
-            ),
-            cell(
-              `${audit.old_mod_datetime || "-"} → ${audit.new_mod_datetime || "-"}`
-            ),
-            cell(audit.reason),
-            cell(audit.actor)
-          );
-          return tr;
-        })
-      );
+      if (!audits.length)
+        return emptyTableRow(auditsBody, 6, "暂无日期审计记录。");
+      auditsBody.innerHTML = audits
+        .map(
+          audit => `<tr>
+          <td>${escapeHtml(formatDate(audit.created_at))}</td>
+          <td><code>${escapeHtml(audit.source_path || "-")}</code></td>
+          <td>${escapeHtml(audit.old_pub_datetime || "-")} → ${escapeHtml(audit.new_pub_datetime || "-")}</td>
+          <td>${escapeHtml(audit.old_mod_datetime || "-")} → ${escapeHtml(audit.new_mod_datetime || "-")}</td>
+          <td>${escapeHtml(audit.reason || "-")}</td>
+          <td>${escapeHtml(audit.actor || "-")}</td>
+        </tr>`
+        )
+        .join("");
     };
 
     const renderPublishRequests = requests => {
-      if (!requests.length) return emptyRow(publishBody, 5);
-      publishBody.replaceChildren(
-        ...requests.map(request => {
-          const tr = document.createElement("tr");
-          tr.append(
-            cell(request.created_at),
-            cell(request.title),
-            cell(request.request_type),
-            cell(request.status),
-            cell(request.error || request.result_summary)
-          );
-          return tr;
-        })
-      );
+      if (!requests.length)
+        return emptyTableRow(
+          publishBody,
+          6,
+          "暂无发布请求。请到文章/发布页创建。 "
+        );
+      publishBody.innerHTML = requests
+        .map(
+          request => `<tr>
+          <td>${badge(request.status, request.status || "queued")}</td>
+          <td><strong>#${escapeHtml(request.id)} ${escapeHtml(request.title || "-")}</strong></td>
+          <td>${escapeHtml(request.request_type || "-")}</td>
+          <td><code>${escapeHtml(request.target_slug || "-")}</code></td>
+          <td>${escapeHtml(formatDate(request.created_at))}</td>
+          <td>${request.error ? badge("failed", "error") + " " : ""}${escapeHtml(request.error || request.result_summary || "-")}</td>
+        </tr>`
+        )
+        .join("");
     };
 
     const load = async () => {
-      try {
-        const [runs, audits, publishRequests] = await Promise.all([
-          api("automation-runs"),
-          api("date-audit"),
-          api("publish-requests"),
-        ]);
-        renderRuns(runs.runs);
-        renderAudits(audits.audits);
-        renderPublishRequests(publishRequests.requests);
-        status.textContent = "已从 BLOG_DB 读取自动化运行记录和日期审计。";
-      } catch (error) {
-        status.textContent = `D1 暂不可用：${error.message}`;
-        renderRuns([]);
-        renderAudits([]);
-        renderPublishRequests([]);
-      }
-    };
+      setStatus(status, "读取自动化、日期审计和发布队列...", "muted");
+      const results = await Promise.allSettled([
+        api("automation-runs"),
+        api("date-audit"),
+        api("publish-requests"),
+      ]);
+      const [runs, audits, requests] = results;
 
-    const refreshAuth = async () => {
-      const me = await api("me");
-      if (me.authenticated) {
-        loginForm.hidden = true;
-        admin.hidden = false;
-        await load();
+      if (runs.status === "fulfilled") renderRuns(runs.value.runs || []);
+      else
+        emptyTableRow(
+          runsBody,
+          6,
+          `无法读取自动化运行：${runs.reason.message}`
+        );
+
+      if (audits.status === "fulfilled")
+        renderAudits(audits.value.audits || []);
+      else
+        emptyTableRow(
+          auditsBody,
+          6,
+          `无法读取日期审计：${audits.reason.message}`
+        );
+
+      if (requests.status === "fulfilled")
+        renderPublishRequests(requests.value.requests || []);
+      else
+        emptyTableRow(
+          publishBody,
+          6,
+          `无法读取发布请求队列：${requests.reason.message}`
+        );
+
+      const failed = results.filter(result => result.status === "rejected");
+      if (failed.length) {
+        setStatus(
+          status,
+          `部分数据读取失败：${failed.map(item => item.reason.message).join("；")}`,
+          "danger"
+        );
       } else {
-        loginForm.hidden = false;
-        admin.hidden = true;
+        setStatus(
+          status,
+          "已从 BLOG_DB 读取自动化运行记录、日期审计和发布队列。",
+          "success"
+        );
       }
     };
 
-    loginForm?.addEventListener("submit", async event => {
-      event.preventDefault();
-      loginError.hidden = true;
-      try {
-        await api("login", {
-          method: "POST",
-          body: JSON.stringify({ password: loginForm.password.value }),
-        });
-        loginForm.password.value = "";
-        await refreshAuth();
-      } catch (error) {
-        loginError.textContent = error.message;
-        loginError.hidden = false;
-      }
-    });
+    root?.querySelector("[data-refresh]")?.addEventListener("click", load);
 
     runForm?.addEventListener("submit", async event => {
       event.preventDefault();
-      runStatus.textContent = "写入中...";
+      setStatus(runStatus, "写入中...", "muted");
       try {
+        const notes = runForm.notes.value;
         await api("automation-runs", {
           method: "POST",
           body: JSON.stringify({
@@ -316,41 +311,18 @@ import AdminLayout from "@/layouts/AdminLayout.astro";
             stage: runForm.stage.value,
             triggerSource: "manual_admin",
             requestedBy: "admin",
-            notes: runForm.notes.value,
+            notes,
+            error: runForm.status.value === "failed" ? notes : "",
           }),
         });
-        runStatus.textContent = "已记录";
+        setStatus(runStatus, "运行记录已写入。", "success");
         runForm.reset();
         await load();
       } catch (error) {
-        runStatus.textContent = error.message;
+        setStatus(runStatus, `写入失败：${error.message}`, "danger");
       }
     });
 
-    publishForm?.addEventListener("submit", async event => {
-      event.preventDefault();
-      publishStatus.textContent = "加入队列中...";
-      try {
-        await api("publish-requests", {
-          method: "POST",
-          body: JSON.stringify({
-            title: publishForm.title.value,
-            requestType: publishForm.requestType.value,
-            prompt: publishForm.prompt.value,
-            requestedBy: "admin",
-          }),
-        });
-        publishStatus.textContent = "已加入队列，后续由 Agent 领取执行";
-        publishForm.reset();
-        await load();
-      } catch (error) {
-        publishStatus.textContent = error.message;
-      }
-    });
-
-    refreshAuth().catch(() => {
-      loginForm.hidden = false;
-      admin.hidden = true;
-    });
+    window.PaceAdmin.initPage(root, load);
   </script>
 </AdminLayout>

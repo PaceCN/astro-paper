@@ -1,129 +1,185 @@
 ---
 import AdminLayout from "@/layouts/AdminLayout.astro";
+
+const adminBasePath = import.meta.env.PUBLIC_ADMIN_BASE_PATH || "/admin";
+const normalizedAdminBasePath = adminBasePath.startsWith("/")
+  ? adminBasePath
+  : `/${adminBasePath}`;
 ---
 
-<AdminLayout title="后台总览">
-  <div id="admin-app">
-    <form
-      data-login
-      class="not-prose max-w-md rounded-lg border border-border p-4"
-      hidden
-    >
-      <label class="block text-sm font-semibold" for="admin-password"
-        >后台密码</label
-      >
-      <input
-        id="admin-password"
-        name="password"
-        type="password"
-        autocomplete="current-password"
-        class="mt-2 w-full rounded border border-border bg-background px-3 py-2"
-        required
-      />
-      <button
-        class="mt-3 rounded bg-accent px-4 py-2 text-sm font-semibold text-white"
-        type="submit"
-      >
-        登录
-      </button>
-      <p data-login-error class="mt-2 text-sm text-red-600" hidden></p>
-    </form>
-
-    <div data-admin hidden>
-      <div class="not-prose mb-4 flex justify-end">
-        <button
-          data-logout
-          class="rounded border border-border px-3 py-2 text-sm"
-          >退出登录</button
+<AdminLayout
+  title="后台总览"
+  description="集中查看文章、广告、发布队列和自动化状态，并进入常用手动操作。"
+>
+  <div id="admin-app" class="admin-grid">
+    <section class="admin-login-card" data-login-card hidden>
+      <h2>需要后台密码</h2>
+      <p class="admin-muted">
+        如果这里一直无法登录，请确认 Cloudflare Pages 已配置 ADMIN_PASSWORD。
+      </p>
+      <form data-login class="admin-grid">
+        <label class="admin-field" for="admin-password">
+          后台密码
+          <input
+            id="admin-password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+          />
+        </label>
+        <button class="admin-btn admin-btn-primary" type="submit"
+          >登录后台</button
         >
-      </div>
-      <div class="not-prose grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div class="rounded-lg border border-border p-4">
-          <strong>文章总数</strong><br /><span data-post-count>-</span>
-        </div>
-        <div class="rounded-lg border border-border p-4">
-          <strong>草稿</strong><br /><span data-draft-count>-</span>
-        </div>
-        <div class="rounded-lg border border-border p-4">
-          <strong>最近发布</strong><br /><span data-recent-publish>-</span>
-        </div>
-        <div class="rounded-lg border border-border p-4">
-          <strong>启用广告位</strong><br /><span data-ad-enabled>-</span>
-        </div>
-        <div class="rounded-lg border border-border p-4">
-          <strong>自动化运行</strong><br /><span data-runs-summary>-</span>
-        </div>
-      </div>
-
-      <h2>站点设置</h2>
-      <form
-        data-settings-form
-        class="not-prose grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2"
-      >
-        <label class="block text-sm">
-          站点标题
-          <input
-            name="siteTitle"
-            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-          />
-        </label>
-        <label class="block text-sm">
-          后台路径说明
-          <input
-            name="adminPathNote"
-            class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-          />
-        </label>
-        <label class="flex items-center gap-2 text-sm">
-          <input name="adsEnabled" type="checkbox" /> 广告总开关
-        </label>
-        <div class="sm:col-span-2">
-          <button
-            class="rounded bg-accent px-4 py-2 text-sm font-semibold text-white"
-            type="submit">保存设置</button
-          >
-          <span data-settings-status class="ml-3 text-sm"></span>
-        </div>
+        <p data-login-error hidden></p>
       </form>
+    </section>
 
-      <p data-error class="text-sm text-red-600" hidden></p>
+    <div data-admin hidden class="admin-grid">
+      <section class="admin-grid admin-grid-3" aria-label="后台状态概览">
+        <article class="admin-card admin-stat">
+          <strong>文章</strong>
+          <span data-post-count>-</span>
+          <p>
+            <span data-published-count>-</span> 已发布，<span data-draft-count
+              >-</span
+            > 草稿
+          </p>
+        </article>
+        <article class="admin-card admin-stat">
+          <strong>最近发布</strong>
+          <span data-recent-publish>-</span>
+          <p>来自 D1 文章索引</p>
+        </article>
+        <article class="admin-card admin-stat">
+          <strong>广告配置</strong>
+          <span data-ad-summary>-</span>
+          <p>启用 / 总广告位</p>
+        </article>
+        <article class="admin-card admin-stat">
+          <strong>发布队列</strong>
+          <span data-queue-summary>-</span>
+          <p>queued / running / failed</p>
+        </article>
+        <article class="admin-card admin-stat">
+          <strong>自动化运行</strong>
+          <span data-runs-summary>-</span>
+          <p>最近运行状态</p>
+        </article>
+        <article class="admin-card admin-stat">
+          <strong>后台配置</strong>
+          <span data-settings-summary>-</span>
+          <p>BLOG_DB / settings API</p>
+        </article>
+      </section>
+
+      <section class="admin-card">
+        <div class="admin-card-header">
+          <div>
+            <h2>常用操作</h2>
+            <p>
+              这些按钮会进入对应后台页面；不会在浏览器里直接改 Git、部署或操作
+              Google 账号。
+            </p>
+          </div>
+        </div>
+        <div class="admin-actions">
+          <a
+            class="admin-btn admin-btn-primary"
+            href={`${normalizedAdminBasePath}/posts#new-publish-request`}
+          >
+            新建发布请求
+          </a>
+          <a
+            class="admin-btn admin-btn-secondary"
+            href={`${normalizedAdminBasePath}/ads`}
+          >
+            管理 Google 广告
+          </a>
+          <a
+            class="admin-btn admin-btn-secondary"
+            href={`${normalizedAdminBasePath}/automation`}
+          >
+            查看自动化运行
+          </a>
+          <button
+            class="admin-btn admin-btn-secondary"
+            type="button"
+            data-request-index-sync
+          >
+            导入/同步文章索引
+          </button>
+        </div>
+        <p class="admin-muted">
+          “导入/同步文章索引”会创建一个 refresh_index 发布请求；浏览器没有本地
+          posts-index.json，不能假装直接导入 D1。
+        </p>
+        <p data-action-status hidden></p>
+      </section>
+
+      <section class="admin-card">
+        <div class="admin-card-header">
+          <div>
+            <h2>站点设置</h2>
+            <p>
+              轻量设置保存在 D1 site_settings；PUBLIC_ADMIN_BASE_PATH
+              仍是构建时变量。
+            </p>
+          </div>
+        </div>
+        <form data-settings-form class="admin-grid admin-grid-2">
+          <label class="admin-field">
+            站点标题
+            <input name="siteTitle" />
+          </label>
+          <label class="admin-field">
+            后台路径说明
+            <input name="adminPathNote" />
+          </label>
+          <label class="admin-switch" style="grid-column: 1 / -1;">
+            <input name="adsEnabled" type="checkbox" />
+            <span>广告总开关</span>
+          </label>
+          <div class="admin-actions" style="grid-column: 1 / -1;">
+            <button class="admin-btn admin-btn-primary" type="submit"
+              >保存设置</button
+            >
+          </div>
+          <p data-settings-status hidden style="grid-column: 1 / -1;"></p>
+        </form>
+      </section>
+
+      <section class="admin-card">
+        <div class="admin-card-header">
+          <div>
+            <h2>后台数据读取状态</h2>
+            <p>如果 BLOG_DB 或 schema 缺失，会在这里用人话说明。</p>
+          </div>
+          <button
+            class="admin-btn admin-btn-secondary"
+            type="button"
+            data-refresh-dashboard
+          >
+            刷新总览
+          </button>
+        </div>
+        <div class="admin-grid admin-grid-2" data-health></div>
+      </section>
     </div>
   </div>
 
   <script is:inline>
     const root = document.querySelector("#admin-app");
-    const loginForm = root?.querySelector("[data-login]");
-    const admin = root?.querySelector("[data-admin]");
-    const errorEl = root?.querySelector("[data-error]");
-    const loginError = root?.querySelector("[data-login-error]");
+    const { api, escapeHtml, formatDate, setStatus, setText } =
+      window.PaceAdmin;
     const settingsForm = root?.querySelector("[data-settings-form]");
     const settingsStatus = root?.querySelector("[data-settings-status]");
+    const actionStatus = root?.querySelector("[data-action-status]");
+    const healthEl = root?.querySelector("[data-health]");
 
-    const api = async (path, options = {}) => {
-      const response = await fetch(`/api/admin/${path}`, {
-        credentials: "same-origin",
-        headers: {
-          "content-type": "application/json",
-          ...(options.headers || {}),
-        },
-        ...options,
-      });
-      const data = await response.json();
-      if (!response.ok)
-        throw new Error(data.error || `API failed: ${response.status}`);
-      return data;
-    };
-
-    const text = (selector, value) => {
-      const el = root?.querySelector(selector);
-      if (el) el.textContent = value;
-    };
-
-    const showError = message => {
-      if (!errorEl) return;
-      errorEl.textContent = message;
-      errorEl.hidden = !message;
-    };
+    const isDraft = post => Number(post.draft) === 1 || post.status === "draft";
+    const countByStatus = (items, status) =>
+      items.filter(item => item.status === status).length;
 
     const parseSettings = settings =>
       Object.fromEntries(
@@ -136,103 +192,196 @@ import AdminLayout from "@/layouts/AdminLayout.astro";
         })
       );
 
-    const renderDashboard = ({
-      posts = [],
-      slots = [],
-      runs = [],
-      settings = [],
-    }) => {
-      const published = posts.filter(
-        post => Number(post.draft) !== 1 && post.status !== "draft"
-      );
-      const drafts = posts.filter(
-        post => Number(post.draft) === 1 || post.status === "draft"
-      );
-      const recent = published[0] || posts[0];
-      text("[data-post-count]", String(posts.length));
-      text("[data-draft-count]", String(drafts.length));
-      text(
-        "[data-recent-publish]",
-        recent?.pub_datetime ? String(recent.pub_datetime).slice(0, 10) : "-"
-      );
-      text(
-        "[data-ad-enabled]",
-        String(slots.filter(slot => Number(slot.enabled) === 1).length)
-      );
-      text(
-        "[data-runs-summary]",
-        runs.length
-          ? `${runs.length} 条记录，最近 ${runs[0].status}`
-          : "暂无记录"
-      );
-
-      const parsedSettings = parseSettings(settings);
-      if (settingsForm) {
-        settingsForm.siteTitle.value = parsedSettings.siteTitle || "";
-        settingsForm.adminPathNote.value =
-          parsedSettings.adminPathNote || "PUBLIC_ADMIN_BASE_PATH 构建时生效";
-        settingsForm.adsEnabled.checked = Boolean(parsedSettings.adsEnabled);
-      }
-      showError("");
+    const renderHealth = results => {
+      healthEl.innerHTML = results
+        .map(
+          item => `<article class="admin-message admin-message-${item.ok ? "success" : "danger"}" style="margin: 0;">
+          <strong>${escapeHtml(item.label)}</strong><br />${escapeHtml(item.message)}
+        </article>`
+        )
+        .join("");
     };
 
     const loadDashboard = async () => {
-      try {
-        const [posts, ads, runs, settings] = await Promise.all([
-          api("posts"),
-          api("ads"),
-          api("automation-runs"),
-          api("settings"),
-        ]);
-        renderDashboard({
-          posts: posts.posts,
-          slots: ads.slots,
-          runs: runs.runs,
-          settings: settings.settings,
-        });
-      } catch (error) {
-        showError(`后台数据读取失败：${error.message}`);
-      }
-    };
+      const entries = await Promise.allSettled([
+        api("posts"),
+        api("ads"),
+        api("publish-requests"),
+        api("automation-runs"),
+        api("settings"),
+      ]);
+      const [postsResult, adsResult, queueResult, runsResult, settingsResult] =
+        entries;
+      const health = [];
 
-    const refreshAuth = async () => {
-      const me = await api("me");
-      if (me.authenticated) {
-        loginForm.hidden = true;
-        admin.hidden = false;
-        await loadDashboard();
+      if (postsResult.status === "fulfilled") {
+        const posts = postsResult.value.posts || [];
+        const published = posts.filter(post => !isDraft(post));
+        const drafts = posts.filter(isDraft);
+        setText(root, "[data-post-count]", posts.length);
+        setText(root, "[data-published-count]", published.length);
+        setText(root, "[data-draft-count]", drafts.length);
+        setText(
+          root,
+          "[data-recent-publish]",
+          published[0]?.pub_datetime
+            ? String(published[0].pub_datetime).slice(0, 10)
+            : "-"
+        );
+        health.push({
+          label: "文章索引",
+          ok: true,
+          message: `已读取 ${posts.length} 篇。`,
+        });
       } else {
-        loginForm.hidden = false;
-        admin.hidden = true;
-      }
-    };
-
-    loginForm?.addEventListener("submit", async event => {
-      event.preventDefault();
-      loginError.hidden = true;
-      try {
-        await api("login", {
-          method: "POST",
-          body: JSON.stringify({ password: loginForm.password.value }),
+        setText(root, "[data-post-count]", "-");
+        setText(root, "[data-published-count]", "-");
+        setText(root, "[data-draft-count]", "-");
+        setText(root, "[data-recent-publish]", "-");
+        health.push({
+          label: "文章索引",
+          ok: false,
+          message: `BLOG_DB.posts_index 读取失败：${postsResult.reason.message}`,
         });
-        loginForm.password.value = "";
-        await refreshAuth();
-      } catch (error) {
-        loginError.textContent = error.message;
-        loginError.hidden = false;
       }
-    });
+
+      if (adsResult.status === "fulfilled") {
+        const slots = adsResult.value.slots || [];
+        setText(
+          root,
+          "[data-ad-summary]",
+          `${slots.filter(slot => Number(slot.enabled) === 1).length} / ${slots.length}`
+        );
+        health.push({
+          label: "广告配置",
+          ok: true,
+          message: `已读取 ${slots.length} 个广告位。`,
+        });
+      } else {
+        setText(root, "[data-ad-summary]", "-");
+        health.push({
+          label: "广告配置",
+          ok: false,
+          message: `BLOG_DB.ad_slots 读取失败：${adsResult.reason.message}`,
+        });
+      }
+
+      if (queueResult.status === "fulfilled") {
+        const requests = queueResult.value.requests || [];
+        setText(
+          root,
+          "[data-queue-summary]",
+          `${countByStatus(requests, "queued")} / ${countByStatus(requests, "running")} / ${countByStatus(requests, "failed")}`
+        );
+        health.push({
+          label: "发布队列",
+          ok: true,
+          message: `已读取 ${requests.length} 条发布请求。`,
+        });
+      } else {
+        setText(root, "[data-queue-summary]", "-");
+        health.push({
+          label: "发布队列",
+          ok: false,
+          message: `publish_requests 读取失败：${queueResult.reason.message}`,
+        });
+      }
+
+      if (runsResult.status === "fulfilled") {
+        const runs = runsResult.value.runs || [];
+        setText(
+          root,
+          "[data-runs-summary]",
+          runs.length
+            ? `${runs[0].status} · ${formatDate(runs[0].created_at)}`
+            : "暂无"
+        );
+        health.push({
+          label: "自动化运行",
+          ok: true,
+          message: `已读取 ${runs.length} 条运行记录。`,
+        });
+      } else {
+        setText(root, "[data-runs-summary]", "-");
+        health.push({
+          label: "自动化运行",
+          ok: false,
+          message: `automation_runs 读取失败：${runsResult.reason.message}`,
+        });
+      }
+
+      if (settingsResult.status === "fulfilled") {
+        const settings = settingsResult.value.settings || [];
+        const parsedSettings = parseSettings(settings);
+        setText(
+          root,
+          "[data-settings-summary]",
+          settings.length ? "可用" : "空"
+        );
+        if (settingsForm) {
+          settingsForm.siteTitle.value = parsedSettings.siteTitle || "";
+          settingsForm.adminPathNote.value =
+            parsedSettings.adminPathNote || "PUBLIC_ADMIN_BASE_PATH 构建时生效";
+          settingsForm.adsEnabled.checked = Boolean(parsedSettings.adsEnabled);
+        }
+        health.push({
+          label: "站点设置",
+          ok: true,
+          message: `已读取 ${settings.length} 项设置。`,
+        });
+      } else {
+        setText(root, "[data-settings-summary]", "-");
+        health.push({
+          label: "站点设置",
+          ok: false,
+          message: `site_settings 读取失败：${settingsResult.reason.message}`,
+        });
+      }
+
+      renderHealth(health);
+    };
 
     root
-      ?.querySelector("[data-logout]")
-      ?.addEventListener("click", async () => {
-        await api("logout", { method: "POST" });
-        await refreshAuth();
+      ?.querySelector("[data-refresh-dashboard]")
+      ?.addEventListener("click", loadDashboard);
+
+    root
+      ?.querySelector("[data-request-index-sync]")
+      ?.addEventListener("click", async event => {
+        const button = event.currentTarget;
+        button.disabled = true;
+        setStatus(actionStatus, "正在创建文章索引同步请求...", "muted");
+        try {
+          const data = await api("publish-requests", {
+            method: "POST",
+            body: JSON.stringify({
+              title: "重新同步文章索引",
+              requestType: "refresh_index",
+              prompt:
+                "请重新导出当前 Markdown 文章索引并同步到后台 D1 posts_index。不要改正文，完成后报告导入数量。",
+              requestedBy: "admin-dashboard",
+            }),
+          });
+          setStatus(
+            actionStatus,
+            `已创建 refresh_index 发布请求，队列 ID：${data.id || "-"}。`,
+            "success"
+          );
+          await loadDashboard();
+        } catch (error) {
+          setStatus(
+            actionStatus,
+            `无法创建索引同步请求：${error.message}`,
+            "danger"
+          );
+        } finally {
+          button.disabled = false;
+        }
       });
 
     settingsForm?.addEventListener("submit", async event => {
       event.preventDefault();
-      settingsStatus.textContent = "保存中...";
+      setStatus(settingsStatus, "保存中...", "muted");
       try {
         await api("settings", {
           method: "PUT",
@@ -244,15 +393,13 @@ import AdminLayout from "@/layouts/AdminLayout.astro";
             },
           }),
         });
-        settingsStatus.textContent = "已保存";
+        setStatus(settingsStatus, "设置已保存。", "success");
+        await loadDashboard();
       } catch (error) {
-        settingsStatus.textContent = error.message;
+        setStatus(settingsStatus, `保存失败：${error.message}`, "danger");
       }
     });
 
-    refreshAuth().catch(() => {
-      loginForm.hidden = false;
-      admin.hidden = true;
-    });
+    window.PaceAdmin.initPage(root, loadDashboard);
   </script>
 </AdminLayout>

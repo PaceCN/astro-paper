@@ -2,154 +2,449 @@
 import AdminLayout from "@/layouts/AdminLayout.astro";
 ---
 
-<AdminLayout title="文章管理">
-  <div id="posts-admin">
-    <form
-      data-login
-      class="not-prose max-w-md rounded-lg border border-border p-4"
-      hidden
-    >
-      <label class="block text-sm font-semibold" for="posts-admin-password"
-        >后台密码</label
-      >
-      <input
-        id="posts-admin-password"
-        name="password"
-        type="password"
-        class="mt-2 w-full rounded border border-border bg-background px-3 py-2"
-        required
-      />
-      <button
-        class="mt-3 rounded bg-accent px-4 py-2 text-sm font-semibold text-white"
-        type="submit">登录</button
-      >
-      <p data-login-error class="mt-2 text-sm text-red-600" hidden></p>
-    </form>
+<AdminLayout
+  title="文章 / 发布"
+  description="查看 D1 文章索引，创建人工发布请求，并跟踪发布队列状态。"
+>
+  <div id="posts-admin" class="admin-grid">
+    <section class="admin-login-card" data-login-card hidden>
+      <h2>需要后台密码</h2>
+      <p class="admin-muted">登录后才能读取文章索引和创建发布请求。</p>
+      <form data-login class="admin-grid">
+        <label class="admin-field" for="posts-admin-password">
+          后台密码
+          <input
+            id="posts-admin-password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+          />
+        </label>
+        <button class="admin-btn admin-btn-primary" type="submit"
+          >登录后台</button
+        >
+        <p data-login-error hidden></p>
+      </form>
+    </section>
 
-    <div data-admin hidden>
-      <p data-status class="not-prose text-sm opacity-75">
-        读取 BLOG_DB 文章索引...
-      </p>
-      <p data-error class="text-sm text-red-600" hidden></p>
-      <div class="not-prose overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead
-            ><tr
-              ><th>状态</th><th>标题</th><th>发布时间</th><th>更新时间</th><th
-                >路径</th
-              ><th>标签</th></tr
-            ></thead
+    <div data-admin hidden class="admin-grid">
+      <section class="admin-grid admin-grid-3" aria-label="文章统计">
+        <article class="admin-card admin-stat">
+          <strong>文章总数</strong>
+          <span data-total-posts>-</span>
+          <p>来自 BLOG_DB.posts_index</p>
+        </article>
+        <article class="admin-card admin-stat">
+          <strong>已发布 / 草稿</strong>
+          <span
+            ><span data-published-posts>-</span> / <span data-draft-posts
+              >-</span
+            ></span
           >
-          <tbody data-posts></tbody>
-        </table>
-      </div>
+          <p>按 status 与 draft 字段统计</p>
+        </article>
+        <article class="admin-card admin-stat">
+          <strong>最近发布</strong>
+          <span data-recent-publish>-</span>
+          <p>最新 pubDatetime</p>
+        </article>
+      </section>
+
+      <section class="admin-card" id="new-publish-request">
+        <div class="admin-card-header">
+          <div>
+            <h2>创建发布请求</h2>
+            <p>
+              这里是把任务加入后台队列；实际发布仍由 Agent/cron
+              领取后完成验证、提交、推送和索引同步。
+            </p>
+          </div>
+          <button
+            class="admin-btn admin-btn-primary"
+            type="button"
+            data-focus-publish
+          >
+            新建发布请求
+          </button>
+        </div>
+
+        <div class="admin-presets" aria-label="发布请求预设">
+          <button
+            class="admin-btn admin-btn-secondary"
+            type="button"
+            data-preset="today-tech"
+          >
+            发布一篇今日技术实践文章
+          </button>
+          <button
+            class="admin-btn admin-btn-secondary"
+            type="button"
+            data-preset="update-old"
+          >
+            更新一篇旧文章
+          </button>
+          <button
+            class="admin-btn admin-btn-secondary"
+            type="button"
+            data-preset="refresh-index"
+          >
+            重新同步文章索引
+          </button>
+          <button
+            class="admin-btn admin-btn-secondary"
+            type="button"
+            data-preset="date-check"
+          >
+            检查日期并发布
+          </button>
+        </div>
+
+        <form
+          data-publish-form
+          class="admin-grid admin-grid-2"
+          style="margin-top: 1rem;"
+        >
+          <label class="admin-field">
+            标题 / 任务名
+            <input
+              name="title"
+              placeholder="例如：发布一篇 Cloudflare D1 后台实践文章"
+              required
+            />
+          </label>
+          <label class="admin-field">
+            目标 slug（可选）
+            <input
+              name="targetSlug"
+              placeholder="例如：cloudflare-d1-admin-practice"
+            />
+          </label>
+          <label class="admin-field">
+            任务类型
+            <select name="requestType">
+              <option value="manual_publish">manual_publish：发布新文章</option>
+              <option value="update_post">update_post：更新旧文章</option>
+              <option value="maintenance">maintenance：维护/检查</option>
+              <option value="refresh_index">refresh_index：同步索引</option>
+            </select>
+          </label>
+          <label class="admin-field">
+            优先级
+            <select name="priority">
+              <option value="0">普通</option>
+              <option value="5">较高</option>
+              <option value="10">紧急</option>
+            </select>
+          </label>
+          <label class="admin-field" style="grid-column: 1 / -1;">
+            详细要求
+            <textarea
+              name="prompt"
+              placeholder="写清楚要发布、更新或维护什么；不要粘贴密码、token 或 Google 账号信息。"
+              required></textarea>
+          </label>
+          <div class="admin-actions" style="grid-column: 1 / -1;">
+            <button class="admin-btn admin-btn-primary" type="submit"
+              >加入发布队列</button
+            >
+            <button class="admin-btn admin-btn-subtle" type="reset"
+              >清空表单</button
+            >
+          </div>
+          <p data-publish-status hidden style="grid-column: 1 / -1;"></p>
+        </form>
+      </section>
+
+      <section class="admin-card">
+        <div class="admin-card-header">
+          <div>
+            <h2>发布请求队列</h2>
+            <p>队列状态会显示 queued/running/published/failed 等结果。</p>
+          </div>
+          <div class="admin-actions">
+            <button
+              class="admin-btn admin-btn-secondary"
+              type="button"
+              data-refresh-queue
+            >
+              刷新队列
+            </button>
+            <a class="admin-btn admin-btn-primary" href="#new-publish-request"
+              >新建发布请求</a
+            >
+          </div>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>状态</th>
+                <th>标题</th>
+                <th>类型</th>
+                <th>目标 slug</th>
+                <th>创建时间</th>
+                <th>结果/错误</th>
+              </tr>
+            </thead>
+            <tbody data-publish-requests></tbody>
+          </table>
+        </div>
+        <p data-queue-status hidden></p>
+      </section>
+
+      <section class="admin-card">
+        <div class="admin-card-header">
+          <div>
+            <h2>文章索引</h2>
+            <p>D1 未配置或导入失败时，这里会显示可操作说明。</p>
+          </div>
+          <button
+            class="admin-btn admin-btn-secondary"
+            type="button"
+            data-refresh-posts
+          >
+            刷新文章列表
+          </button>
+        </div>
+        <div
+          data-posts-empty
+          class="admin-message admin-message-warning"
+          hidden
+        >
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>状态</th>
+                <th>标题</th>
+                <th>Slug</th>
+                <th>发布时间</th>
+                <th>更新时间</th>
+                <th>标签</th>
+              </tr>
+            </thead>
+            <tbody data-posts></tbody>
+          </table>
+        </div>
+        <p data-posts-status hidden></p>
+      </section>
     </div>
   </div>
 
   <script is:inline>
     const root = document.querySelector("#posts-admin");
-    const loginForm = root?.querySelector("[data-login]");
-    const admin = root?.querySelector("[data-admin]");
-    const tbody = root?.querySelector("[data-posts]");
-    const status = root?.querySelector("[data-status]");
-    const errorEl = root?.querySelector("[data-error]");
-    const loginError = root?.querySelector("[data-login-error]");
+    const {
+      api,
+      badge,
+      emptyTableRow,
+      escapeHtml,
+      formatDate,
+      parseTags,
+      setStatus,
+      setText,
+    } = window.PaceAdmin;
+    const postsBody = root?.querySelector("[data-posts]");
+    const requestsBody = root?.querySelector("[data-publish-requests]");
+    const postsStatus = root?.querySelector("[data-posts-status]");
+    const queueStatus = root?.querySelector("[data-queue-status]");
+    const postsEmpty = root?.querySelector("[data-posts-empty]");
+    const publishForm = root?.querySelector("[data-publish-form]");
+    const publishStatus = root?.querySelector("[data-publish-status]");
 
-    const api = async (path, options = {}) => {
-      const response = await fetch(`/api/admin/${path}`, {
-        credentials: "same-origin",
-        headers: {
-          "content-type": "application/json",
-          ...(options.headers || {}),
-        },
-        ...options,
-      });
-      const data = await response.json();
-      if (!response.ok)
-        throw new Error(data.error || `API failed: ${response.status}`);
-      return data;
+    const presets = {
+      "today-tech": {
+        title: "发布一篇今日技术实践文章",
+        requestType: "manual_publish",
+        targetSlug: "",
+        prompt:
+          "请基于近期技术实践写一篇中文文章，主题聚焦 AI 自动化、自托管运维或低成本独立博客。发布前完成日期检查、构建验证、提交、推送和 posts_index 同步。",
+      },
+      "update-old": {
+        title: "更新一篇旧文章",
+        requestType: "update_post",
+        targetSlug: "",
+        prompt:
+          "请选择一篇适合更新的旧文章，补充最新实践、修正过时内容，并保留原有风格。请在结果里说明更新了哪篇文章。",
+      },
+      "refresh-index": {
+        title: "重新同步文章索引",
+        requestType: "refresh_index",
+        targetSlug: "",
+        prompt:
+          "请重新导出当前 Markdown 文章索引并同步到后台 D1 posts_index。不要改正文，完成后报告导入数量。",
+      },
+      "date-check": {
+        title: "检查日期并发布",
+        requestType: "maintenance",
+        targetSlug: "",
+        prompt:
+          "请先运行日期校验，修正需要审计的 pubDatetime/modDatetime，再按正常发布流程处理一篇合适文章。",
+      },
     };
 
-    const escapeHtml = value =>
-      String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;");
+    const isDraft = post => Number(post.draft) === 1 || post.status === "draft";
 
-    const parseTags = value => {
-      if (Array.isArray(value)) return value.join(", ");
-      try {
-        return JSON.parse(value || "[]").join(", ");
-      } catch {
-        return value || "";
+    const renderStats = posts => {
+      const published = posts.filter(post => !isDraft(post));
+      const drafts = posts.filter(isDraft);
+      setText(root, "[data-total-posts]", posts.length);
+      setText(root, "[data-published-posts]", published.length);
+      setText(root, "[data-draft-posts]", drafts.length);
+      setText(
+        root,
+        "[data-recent-publish]",
+        published[0]?.pub_datetime
+          ? String(published[0].pub_datetime).slice(0, 10)
+          : "-"
+      );
+    };
+
+    const renderPosts = posts => {
+      renderStats(posts);
+      if (!posts.length) {
+        emptyTableRow(
+          postsBody,
+          6,
+          "暂无文章索引。请配置 BLOG_DB，并用 corepack pnpm run export:posts-index 生成索引后导入 D1。"
+        );
+        postsEmpty.hidden = false;
+        postsEmpty.textContent =
+          "BLOG_DB 可访问，但 posts_index 为空。请导入 posts-index.sql 或通过 /api/admin/posts/import 同步。";
+        return;
       }
-    };
-
-    const render = posts => {
-      tbody.innerHTML = posts
+      postsEmpty.hidden = true;
+      postsBody.innerHTML = posts
         .map(
           post => `<tr>
-            <td>${Number(post.draft) === 1 || post.status === "draft" ? "草稿" : "发布"}</td>
-            <td>${escapeHtml(post.title || "-")}</td>
-            <td>${escapeHtml(String(post.pub_datetime || "-").slice(0, 10))}</td>
-            <td>${escapeHtml(post.mod_datetime ? String(post.mod_datetime).slice(0, 10) : "-")}</td>
-            <td><code>${escapeHtml(post.slug || post.source_path || "-")}</code></td>
-            <td>${escapeHtml(parseTags(post.tags))}</td>
-          </tr>`
+          <td>${isDraft(post) ? badge("draft", "草稿") : badge("published", "发布")}</td>
+          <td><strong>${escapeHtml(post.title || "-")}</strong><br><small class="admin-muted">${escapeHtml(post.source_path || "")}</small></td>
+          <td><code>${escapeHtml(post.slug || "-")}</code></td>
+          <td>${escapeHtml(formatDate(post.pub_datetime))}</td>
+          <td>${escapeHtml(formatDate(post.mod_datetime || post.updated_at))}</td>
+          <td>${escapeHtml(parseTags(post.tags) || "-")}</td>
+        </tr>`
         )
         .join("");
     };
 
-    const showError = message => {
-      errorEl.textContent = message;
-      errorEl.hidden = !message;
+    const renderRequests = requests => {
+      if (!requests.length) {
+        emptyTableRow(
+          requestsBody,
+          6,
+          "暂无发布请求。点击“新建发布请求”把任务加入队列。"
+        );
+        return;
+      }
+      requestsBody.innerHTML = requests
+        .map(
+          request => `<tr>
+          <td>${badge(request.status, request.status || "queued")}</td>
+          <td><strong>#${escapeHtml(request.id)} ${escapeHtml(request.title || "-")}</strong></td>
+          <td>${escapeHtml(request.request_type || "-")}</td>
+          <td><code>${escapeHtml(request.target_slug || "-")}</code></td>
+          <td>${escapeHtml(formatDate(request.created_at))}</td>
+          <td>${escapeHtml(request.error || request.result_summary || "-")}</td>
+        </tr>`
+        )
+        .join("");
     };
 
-    const load = async () => {
+    const loadPosts = async () => {
+      setStatus(postsStatus, "读取 BLOG_DB 文章索引...", "muted");
       try {
         const data = await api("posts");
-        render(data.posts);
-        status.textContent = `已从 BLOG_DB 读取 ${data.posts.length} 篇文章索引。`;
-        showError("");
+        renderPosts(data.posts || []);
+        setStatus(
+          postsStatus,
+          `已读取 ${data.posts?.length || 0} 篇文章索引。`,
+          "success"
+        );
       } catch (error) {
-        render([]);
-        status.textContent = "BLOG_DB 文章索引读取失败。";
-        showError(error.message);
+        renderStats([]);
+        emptyTableRow(postsBody, 6, "无法读取文章索引。");
+        postsEmpty.hidden = false;
+        postsEmpty.textContent = `无法读取 BLOG_DB.posts_index：${error.message}。请确认 Cloudflare D1 binding 名为 BLOG_DB，并已导入 schema 与 posts-index。`;
+        setStatus(postsStatus, "文章索引读取失败。", "danger");
       }
     };
 
-    const refreshAuth = async () => {
-      const me = await api("me");
-      if (me.authenticated) {
-        loginForm.hidden = true;
-        admin.hidden = false;
-        await load();
-      } else {
-        loginForm.hidden = false;
-        admin.hidden = true;
-      }
-    };
-
-    loginForm?.addEventListener("submit", async event => {
-      event.preventDefault();
-      loginError.hidden = true;
+    const loadRequests = async () => {
+      setStatus(queueStatus, "读取发布请求队列...", "muted");
       try {
-        await api("login", {
-          method: "POST",
-          body: JSON.stringify({ password: loginForm.password.value }),
-        });
-        loginForm.password.value = "";
-        await refreshAuth();
+        const data = await api("publish-requests");
+        renderRequests(data.requests || []);
+        setStatus(
+          queueStatus,
+          `已读取 ${data.requests?.length || 0} 条发布请求。`,
+          "success"
+        );
       } catch (error) {
-        loginError.textContent = error.message;
-        loginError.hidden = false;
+        emptyTableRow(requestsBody, 6, "无法读取发布请求队列。");
+        setStatus(queueStatus, `发布队列读取失败：${error.message}`, "danger");
+      }
+    };
+
+    root?.querySelectorAll("[data-preset]").forEach(button => {
+      button.addEventListener("click", () => {
+        const preset = presets[button.dataset.preset];
+        if (!preset || !publishForm) return;
+        publishForm.title.value = preset.title;
+        publishForm.requestType.value = preset.requestType;
+        publishForm.targetSlug.value = preset.targetSlug;
+        publishForm.prompt.value = preset.prompt;
+        publishForm.title.focus();
+      });
+    });
+
+    root
+      ?.querySelector("[data-focus-publish]")
+      ?.addEventListener("click", () => {
+        publishForm?.scrollIntoView({ behavior: "smooth", block: "center" });
+        publishForm?.title?.focus();
+      });
+
+    root
+      ?.querySelector("[data-refresh-posts]")
+      ?.addEventListener("click", loadPosts);
+    root
+      ?.querySelector("[data-refresh-queue]")
+      ?.addEventListener("click", loadRequests);
+
+    publishForm?.addEventListener("submit", async event => {
+      event.preventDefault();
+      setStatus(publishStatus, "加入发布队列中...", "muted");
+      try {
+        const data = await api("publish-requests", {
+          method: "POST",
+          body: JSON.stringify({
+            title: publishForm.title.value,
+            targetSlug: publishForm.targetSlug.value,
+            requestType: publishForm.requestType.value,
+            priority: Number(publishForm.priority.value || 0),
+            prompt: publishForm.prompt.value,
+            requestedBy: "admin",
+          }),
+        });
+        setStatus(
+          publishStatus,
+          `已加入发布队列，队列 ID：${data.id || "-"}。后续由 Agent/cron 领取执行。`,
+          "success"
+        );
+        publishForm.reset();
+        await loadRequests();
+      } catch (error) {
+        setStatus(publishStatus, `无法加入队列：${error.message}`, "danger");
       }
     });
 
-    refreshAuth().catch(() => {
-      loginForm.hidden = false;
-      admin.hidden = true;
+    window.PaceAdmin.initPage(root, async () => {
+      await Promise.all([loadPosts(), loadRequests()]);
+      if (window.location.hash === "#new-publish-request") {
+        publishForm?.title?.focus();
+      }
     });
   </script>
 </AdminLayout>
