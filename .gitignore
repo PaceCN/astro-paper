@@ -1,8 +1,10 @@
 # build output
 dist/
-
 # generated types
 .astro/
+
+# local Cloudflare state
+.wrangler/
 
 # dependencies
 node_modules/
@@ -13,19 +15,14 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# environment variables
+
+# environment variables and local Cloudflare bindings
 .env
 .env.production
+wrangler.toml
 
 # macOS-specific files
 .DS_Store
 
 # jetbrains setting folder
 .idea/
-
-# pagefind
-public/pagefind
-
-# local agent/browser artifacts
-.claude/
-.playwright-cli/

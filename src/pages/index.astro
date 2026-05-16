@@ -1,118 +1,44 @@
 ---
-import { getCollection } from "astro:content";
-import Layout from "@/layouts/Layout.astro";
-import Header from "@/components/Header.astro";
-import Footer from "@/components/Footer.astro";
-import Socials from "@/components/Socials.astro";
-import LinkButton from "@/components/LinkButton.astro";
-import Card from "@/components/Card.astro";
-import AdSlot from "@/components/AdSlot.astro";
-import getSortedPosts from "@/utils/getSortedPosts";
-import IconRss from "@/assets/icons/IconRss.svg";
-import IconArrowRight from "@/assets/icons/IconArrowRight.svg";
-import { SITE } from "@/config";
-import { SOCIALS } from "@/constants";
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AdSlot from '../components/AdSlot.astro';
 
-const posts = await getCollection("blog");
+type Post = {
+  id: number;
+  title: string;
+  slug: string;
+  content: string;
+  createdAt: string | number;
+};
 
-const sortedPosts = getSortedPosts(posts);
-const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
-const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
+let posts: Post[] = [];
+
+function excerpt(content: string) {
+  return content.replace(/[#>*_\[\]-]/g, '').slice(0, 160);
+}
+
+try {
+  const response = await fetch(new URL('/api/posts?status=published&pageSize=20', Astro.url));
+  const result = await response.json() as { success: boolean; data?: { posts: Post[] } };
+  posts = result.data?.posts ?? [];
+} catch {
+  posts = [];
+}
 ---
 
-<Layout>
-  <Header />
-  <main id="main-content" data-layout="index" class="app-layout">
-    <section id="hero" class:list={["pt-8 pb-6", "border-b border-border"]}>
-      <h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">
-        把复杂工具变成可复用的实战手册
-      </h1>
-      <a
-        target="_blank"
-        href="/rss.xml"
-        class="inline-block"
-        aria-label="rss feed"
-        title="RSS Feed"
-      >
-        <IconRss
-          width={20}
-          height={20}
-          class="scale-125 stroke-accent stroke-3 rtl:-rotate-90"
-        />
-        <span class="sr-only">RSS Feed</span>
-      </a>
-
-      <p>
-        这里记录 AI 自动化、n8n / MCP、Cloudflare、VPS、自托管运维和 Astro
-        独立博客的真实配置、踩坑与成本账。目标很简单：让个人开发者用更低成本，搭出更稳定、更能长期复用的工具系统。
-      </p>
-      <p class="mt-2">
-        先从可复现的教程和清单开始，后续逐步沉淀模板、脚本和服务复盘。
-      </p>
-      {
-        // only display if at least one social link is enabled
-        SOCIALS.length > 0 && (
-          <div class="mt-4 flex max-sm:flex-col sm:items-center">
-            <div class="me-2 mb-1 whitespace-nowrap sm:mb-0">项目链接：</div>
-            <Socials />
-          </div>
-        )
-      }
-    </section>
-
-    <AdSlot slot="homeAfterHero" class="max-w-app" />
-
-    {
-      featuredPosts.length > 0 && (
-        <section
-          id="featured"
-          class:list={[
-            "pt-12 pb-6",
-            { "border-b border-border": recentPosts.length > 0 },
-          ]}
-        >
-          <h2 class="text-2xl font-semibold tracking-wide">精选文章</h2>
-          <ul>
-            {featuredPosts.map(data => (
-              <Card variant="h3" {...data} />
-            ))}
-          </ul>
-        </section>
-      )
-    }
-
-    {
-      recentPosts.length > 0 && (
-        <section id="recent-posts" class="pt-12 pb-6">
-          <h2 class="text-2xl font-semibold tracking-wide">最新文章</h2>
-          <ul>
-            {recentPosts.map(
-              (data, index) =>
-                index < SITE.postPerIndex && <Card variant="h3" {...data} />
-            )}
-          </ul>
-        </section>
-      )
-    }
-
-    <AdSlot slot="homeAfterRecent" class="max-w-app" />
-
-    <div class="my-8 text-center">
-      <LinkButton href="/posts/">
-        全部文章
-        <IconArrowRight class="inline-block rtl:-rotate-180" />
-      </LinkButton>
-    </div>
-  </main>
-  <Footer />
-</Layout>
-
-<script>
-  document.addEventListener("astro:page-load", () => {
-    const indexLayout = (document.querySelector("#main-content") as HTMLElement)
-      ?.dataset?.layout;
-    if (indexLayout) {
-      sessionStorage.setItem("backUrl", "/");
-    }
-  });
-</script>
+<BaseLayout title="AI 全栈博客">
+  <AdSlot position="content_top" />
+  <div class="space-y-10">
+    {posts.length ? posts.map((post) => (
+      <article>
+        <p class="mb-2 text-sm text-neutral-500">{new Date(post.createdAt).toLocaleDateString('zh-CN')}</p>
+        <h1 class="mb-3 text-3xl font-semibold leading-tight">
+          <a href={`/posts/${post.slug}`} class="no-underline hover:underline">{post.title}</a>
+        </h1>
+        <p class="text-neutral-700">{excerpt(post.content)}...</p>
+      </article>
+    )) : (
+      <p class="text-neutral-600">暂无已发布文章。</p>
+    )}
+  </div>
+  <AdSlot position="content_bottom" />
+</BaseLayout>

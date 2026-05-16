@@ -1,0 +1,47 @@
+---
+import { marked } from 'marked';
+import sanitizeHtml from 'sanitize-html';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdSlot from '../../components/AdSlot.astro';
+
+type Post = {
+  title: string;
+  slug: string;
+  content: string;
+  createdAt: string | number;
+};
+
+const { slug } = Astro.params;
+let post: Post | undefined;
+
+try {
+  const response = await fetch(new URL(`/api/posts/${slug}`, Astro.url));
+  const result = await response.json() as { success: boolean; data?: { post: Post } };
+  post = result.data?.post;
+} catch {
+  post = undefined;
+}
+
+if (!post) return Astro.redirect('/');
+
+const unsafeHtml = await marked.parse(post.content);
+const content = sanitizeHtml(unsafeHtml, {
+  allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2']),
+  allowedAttributes: {
+    ...sanitizeHtml.defaults.allowedAttributes,
+    img: ['src', 'alt', 'title'],
+    a: ['href', 'name', 'target', 'rel']
+  },
+  allowedSchemes: ['http', 'https', 'mailto']
+});
+---
+
+<BaseLayout title={`${post.title} - AI 全栈博客`}>
+  <article>
+    <p class="mb-3 text-sm text-neutral-500">{new Date(post.createdAt).toLocaleDateString('zh-CN')}</p>
+    <h1 class="mb-8 text-4xl font-semibold leading-tight">{post.title}</h1>
+    <AdSlot position="content_top" />
+    <div class="prose max-w-none" set:html={content} />
+    <AdSlot position="content_bottom" />
+  </article>
+</BaseLayout>

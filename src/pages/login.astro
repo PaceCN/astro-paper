@@ -1,0 +1,32 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="登录 - AI 全栈博客">
+  <div class="mx-auto max-w-sm">
+    <h1 class="mb-8 text-3xl font-semibold">登录</h1>
+    <form id="login-form" class="space-y-5">
+      <label class="block">
+        <span class="mb-2 block text-sm text-neutral-600">后台密码</span>
+        <input name="password" type="password" autocomplete="current-password" class="w-full border border-neutral-300 px-3 py-2" required />
+      </label>
+      <button class="w-full bg-neutral-950 px-4 py-2 text-white" type="submit">登录</button>
+      <p id="message" class="text-sm text-neutral-600"></p>
+    </form>
+  </div>
+  <script>
+    const form = document.querySelector('#login-form');
+    const message = document.querySelector('#message');
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const data = Object.fromEntries(new FormData(form));
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      if (message) message.textContent = result.message;
+    });
+  </script>
+</BaseLayout>

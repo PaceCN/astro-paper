@@ -1,56 +1,24 @@
 ---
-import { ADS } from "@/config";
+import type { AdPosition } from '../db/schema';
 
-type SlotName = keyof typeof ADS.slots;
-
-type Props = {
-  slot: SlotName;
-  class?: string;
+type AdSlot = {
+  position: AdPosition;
+  adCode: string;
+  isEnabled: boolean;
 };
 
-const { slot, class: className = "" } = Astro.props;
-const slotConfig = ADS.slots[slot];
-const hasConfig = Boolean(
-  ADS.enabled && slotConfig.enabled && ADS.googleClient && slotConfig.slot
-);
-const showPlaceholder = import.meta.env.DEV && !hasConfig;
+const { position } = Astro.props as { position: AdPosition };
+let slot: AdSlot | undefined;
+
+try {
+  const response = await fetch(new URL('/api/ads', Astro.url));
+  const result = await response.json() as { success: boolean; data?: { adSlots: AdSlot[] } };
+  slot = result.data?.adSlots.find((item) => item.position === position);
+} catch {
+  slot = undefined;
+}
 ---
 
-{
-  hasConfig ? (
-    <aside
-      class:list={["my-8", className]}
-      aria-label="广告"
-      data-ad-slot={slot}
-    >
-      <ins
-        class="adsbygoogle block"
-        style="display:block"
-        data-ad-client={ADS.googleClient}
-        data-ad-slot={slotConfig.slot}
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-      />
-      <script
-        is:inline
-        async
-        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADS.googleClient}`}
-        crossorigin="anonymous"
-      />
-      <script is:inline>
-        (adsbygoogle = window.adsbygoogle || []).push({});
-      </script>
-    </aside>
-  ) : showPlaceholder ? (
-    <aside
-      class:list={[
-        "text-muted-foreground my-8 rounded border border-dashed border-border p-4 text-center text-sm",
-        className,
-      ]}
-      aria-label="广告占位"
-      data-ad-slot={slot}
-    >
-      广告位占位：{slotConfig.label}。当前未启用或未配置。
-    </aside>
-  ) : null
-}
+{slot?.isEnabled && slot.adCode ? (
+  <aside class="my-8 text-center text-sm text-neutral-500" data-ad-position={position} set:html={slot.adCode} />
+) : null}

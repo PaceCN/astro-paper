@@ -1,16 +1,9 @@
-# Example Cloudflare Pages/Workers configuration for Pace Notes admin backend.
-# Copy values into Cloudflare Pages settings or your own wrangler.toml.
-
-name = "pace-notes"
-compatibility_date = "2026-05-14"
+name = "boke"
 pages_build_output_dir = "dist"
-
-[vars]
-# Set this in Cloudflare dashboard instead of committing a real password.
-# ADMIN_PASSWORD = "replace-with-a-long-random-password"
-PUBLIC_ADMIN_BASE_PATH = "/admin"
+compatibility_date = "2025-12-01"
 
 [[d1_databases]]
-binding = "BLOG_DB"
-database_name = "pace-notes-blog"
-database_id = "00000000-0000-0000-0000-000000000000"
+binding = "DB"
+database_name = "blogdb"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "drizzle"

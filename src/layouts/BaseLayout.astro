@@ -1,0 +1,38 @@
+---
+import AdSlot from '../components/AdSlot.astro';
+import '../styles/global.css';
+
+const { title = 'AI 全栈博客' } = Astro.props as { title?: string };
+---
+
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="mx-auto max-w-5xl px-6 py-8">
+      <nav class="flex items-baseline justify-between gap-6 border-b border-neutral-200 pb-5">
+        <a href="/" class="text-xl font-semibold no-underline">AI 全栈博客</a>
+        <a href="/login" class="text-sm text-neutral-600">登录</a>
+      </nav>
+      <AdSlot position="header_bottom" />
+    </header>
+    <main class="mx-auto grid max-w-5xl gap-10 px-6 pb-16 md:grid-cols-[1fr_220px]">
+      <section class="min-w-0">
+        <slot />
+      </section>
+      <aside>
+        <AdSlot position="sidebar_top" />
+      </aside>
+    </main>
+    <footer class="mx-auto max-w-5xl px-6 pb-10 text-sm text-neutral-500">
+      <AdSlot position="footer_top" />
+      <p class="border-t border-neutral-200 pt-6">© {new Date().getFullYear()} AI 全栈博客</p>
+    </footer>
+  </body>
+</html>
