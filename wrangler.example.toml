@@ -3,6 +3,12 @@ pages_build_output_dir = "dist-pages"
 compatibility_date = "2025-12-01"
 compatibility_flags = ["nodejs_compat"]
 
+[[d1_databases]]
+binding = "DB"
+database_name = "blogdb"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "drizzle"
+
 # D1 建议在 Cloudflare Pages 后台绑定：
 # Binding name: DB
 # Database: 你的 D1 数据库

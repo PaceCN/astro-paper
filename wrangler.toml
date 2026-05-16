@@ -2,3 +2,9 @@ name = "boke"
 pages_build_output_dir = "dist-pages"
 compatibility_date = "2025-12-01"
 compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "blogdb"
+database_id = "f501aef2-f5c7-44c5-ba02-f38c8b85c4c3"
+migrations_dir = "drizzle"

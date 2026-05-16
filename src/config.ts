@@ -2,7 +2,7 @@ export const SITE = {
   website: "https://astro-paper-18u.pages.dev/",
   author: "wx",
   profile: "https://github.com/PaceCN",
-  desc: "面向中文个人开发者的 AI 自动化、自托管运维与低成本独立博客实战手册。",
+  desc: "Pace Notes 是一个个人技术博客，记录 AI 工具、自动化、Cloudflare、VPS 和独立博客搭建中的真实尝试。",
   title: "Pace Notes",
   ogImage: "favicon.svg",
   lightAndDarkMode: true,
