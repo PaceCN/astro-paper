@@ -11,4 +11,5 @@ await cp('dist/client', 'dist-pages', { recursive: true });
 await cp('dist/server', 'dist-pages/_worker', { recursive: true });
 await rm('dist/server/wrangler.json', { force: true });
 await rm('dist-pages/_worker/wrangler.json', { force: true });
+await rm('.wrangler/deploy/config.json', { force: true });
 await writeFile('dist-pages/_worker.js', "export { default } from './_worker/entry.mjs';\n");
