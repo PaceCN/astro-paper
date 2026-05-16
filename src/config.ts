@@ -1,0 +1,23 @@
+export const SITE = {
+  website: "https://astro-paper-18u.pages.dev/",
+  author: "wx",
+  profile: "https://github.com/PaceCN",
+  desc: "面向中文个人开发者的 AI 自动化、自托管运维与低成本独立博客实战手册。",
+  title: "Pace Notes",
+  ogImage: "favicon.svg",
+  lightAndDarkMode: true,
+  postPerIndex: 6,
+  postPerPage: 12,
+  scheduledPostMargin: 15 * 60 * 1000,
+  showArchives: false,
+  showBackButton: true,
+  editPost: {
+    enabled: false,
+    text: "在 GitHub 编辑",
+    url: "",
+  },
+  dynamicOgImage: false,
+  dir: "ltr",
+  lang: "zh-CN",
+  timezone: "Asia/Shanghai",
+} as const;

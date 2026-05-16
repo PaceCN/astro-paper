@@ -1,6 +1,13 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import AdSlot from '../components/AdSlot.astro';
+import Layout from '@/layouts/Layout.astro';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+import Datetime from '@/components/Datetime.astro';
+import LinkButton from '@/components/LinkButton.astro';
+import AdSlot from '@/components/AdSlot.astro';
+import IconRss from '@/assets/icons/IconRss.svg';
+import IconArrowRight from '@/assets/icons/IconArrowRight.svg';
+import { SITE } from '@/config';
 
 type Post = {
   id: number;
@@ -13,11 +20,11 @@ type Post = {
 let posts: Post[] = [];
 
 function excerpt(content: string) {
-  return content.replace(/[#>*_\[\]-]/g, '').slice(0, 160);
+  return content.replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 160);
 }
 
 try {
-  const response = await fetch(new URL('/api/posts?status=published&pageSize=20', Astro.url));
+  const response = await fetch(new URL(`/api/posts?status=published&pageSize=${SITE.postPerIndex}`, Astro.url));
   const result = await response.json() as { success: boolean; data?: { posts: Post[] } };
   posts = result.data?.posts ?? [];
 } catch {
@@ -25,20 +32,68 @@ try {
 }
 ---
 
-<BaseLayout title="AI 全栈博客">
-  <AdSlot position="content_top" />
-  <div class="space-y-10">
-    {posts.length ? posts.map((post) => (
-      <article>
-        <p class="mb-2 text-sm text-neutral-500">{new Date(post.createdAt).toLocaleDateString('zh-CN')}</p>
-        <h1 class="mb-3 text-3xl font-semibold leading-tight">
-          <a href={`/posts/${post.slug}`} class="no-underline hover:underline">{post.title}</a>
-        </h1>
-        <p class="text-neutral-700">{excerpt(post.content)}...</p>
-      </article>
-    )) : (
-      <p class="text-neutral-600">暂无已发布文章。</p>
-    )}
-  </div>
-  <AdSlot position="content_bottom" />
-</BaseLayout>
+<Layout>
+  <Header />
+  <main id="main-content" data-layout="index" class="app-layout">
+    <section id="hero" class:list={["pt-8 pb-6", "border-b border-border"]}>
+      <h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">
+        把复杂工具变成可复用的实战手册
+      </h1>
+      <a target="_blank" href="/rss.xml" class="inline-block" aria-label="rss feed" title="RSS Feed">
+        <IconRss width={20} height={20} class="scale-125 stroke-accent stroke-3 rtl:-rotate-90" />
+        <span class="sr-only">RSS Feed</span>
+      </a>
+      <p>
+        这里记录 AI 自动化、Cloudflare、VPS、自托管运维和独立博客的真实配置、踩坑与成本账。
+      </p>
+      <p class="mt-2">
+        先从可复现的教程和清单开始，后续逐步沉淀模板、脚本和服务复盘。
+      </p>
+    </section>
+
+    <AdSlot slot="homeAfterHero" class="max-w-app" />
+
+    <section id="recent-posts" class="pt-12 pb-6">
+      <h2 class="text-2xl font-semibold tracking-wide">最新文章</h2>
+      {posts.length ? (
+        <ul>
+          {posts.map(post => (
+            <li class="my-6">
+              <a
+                href={`/posts/${post.slug}/`}
+                class:list={[
+                  "inline-block text-lg font-medium text-accent",
+                  "decoration-dashed underline-offset-4 hover:underline",
+                  "focus-visible:no-underline focus-visible:underline-offset-0",
+                ]}
+              >
+                <h3>{post.title}</h3>
+              </a>
+              <Datetime pubDatetime={new Date(post.createdAt)} />
+              <p>{excerpt(post.content)}{post.content.length > 160 ? '...' : ''}</p>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="mt-6 text-muted-foreground">暂无已发布文章。</p>
+      )}
+    </section>
+
+    <AdSlot slot="homeAfterRecent" class="max-w-app" />
+
+    <div class="my-8 text-center">
+      <LinkButton href="/posts/">
+        全部文章
+        <IconArrowRight class="inline-block rtl:-rotate-180" />
+      </LinkButton>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  document.addEventListener("astro:page-load", () => {
+    const indexLayout = (document.querySelector("#main-content") as HTMLElement)?.dataset?.layout;
+    if (indexLayout) sessionStorage.setItem("backUrl", "/");
+  });
+</script>

@@ -1,8 +1,15 @@
 ---
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import AdSlot from '../../components/AdSlot.astro';
+import Layout from '@/layouts/Layout.astro';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+import Datetime from '@/components/Datetime.astro';
+import AdSlot from '@/components/AdSlot.astro';
+import BackButton from '@/components/BackButton.astro';
+import BackToTopButton from '@/components/BackToTopButton.astro';
+import ShareLinks from '@/components/ShareLinks.astro';
+import { SITE } from '@/config';
 
 type Post = {
   title: string;
@@ -24,24 +31,44 @@ try {
 
 if (!post) return Astro.redirect('/');
 
+const pubDatetime = new Date(post.createdAt);
 const unsafeHtml = await marked.parse(post.content);
 const content = sanitizeHtml(unsafeHtml, {
-  allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2']),
+  allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'h3', 'h4', 'pre', 'code']),
   allowedAttributes: {
     ...sanitizeHtml.defaults.allowedAttributes,
     img: ['src', 'alt', 'title'],
-    a: ['href', 'name', 'target', 'rel']
+    a: ['href', 'name', 'target', 'rel'],
+    code: ['class'],
+    pre: ['class']
   },
   allowedSchemes: ['http', 'https', 'mailto']
 });
 ---
 
-<BaseLayout title={`${post.title} - AI 全栈博客`}>
-  <article>
-    <p class="mb-3 text-sm text-neutral-500">{new Date(post.createdAt).toLocaleDateString('zh-CN')}</p>
-    <h1 class="mb-8 text-4xl font-semibold leading-tight">{post.title}</h1>
-    <AdSlot position="content_top" />
-    <div class="prose max-w-none" set:html={content} />
-    <AdSlot position="content_bottom" />
-  </article>
-</BaseLayout>
+<Layout
+  title={`${post.title} | ${SITE.title}`}
+  description={post.content.replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 160)}
+  pubDatetime={pubDatetime}
+  scrollSmooth={true}
+>
+  <Header />
+  <BackButton />
+  <main id="main-content" class:list={["app-layout pb-12", { "mt-8": !SITE.showBackButton }]} data-pagefind-body>
+    <h1 class="inline-block text-2xl font-bold text-accent sm:text-3xl">{post.title}</h1>
+    <div class="my-2 flex items-center gap-2">
+      <Datetime pubDatetime={pubDatetime} size="lg" />
+    </div>
+    <AdSlot slot="postTop" class="max-w-app" />
+    <article
+      id="article"
+      class="app-prose mt-8 w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
+      set:html={content}
+    />
+    <AdSlot slot="postBottom" class="max-w-app" />
+    <hr class="my-8 border-dashed" />
+    <BackToTopButton />
+    <ShareLinks />
+  </main>
+  <Footer />
+</Layout>

@@ -1,0 +1,59 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import Main from '@/layouts/Main.astro';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+import Datetime from '@/components/Datetime.astro';
+import { SITE } from '@/config';
+
+type Post = {
+  id: number;
+  title: string;
+  slug: string;
+  content: string;
+  createdAt: string | number;
+};
+
+let posts: Post[] = [];
+
+function excerpt(content: string) {
+  return content.replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 160);
+}
+
+try {
+  const response = await fetch(new URL('/api/posts?status=published&pageSize=50', Astro.url));
+  const result = await response.json() as { success: boolean; data?: { posts: Post[] } };
+  posts = result.data?.posts ?? [];
+} catch {
+  posts = [];
+}
+---
+
+<Layout title={`文章 | ${SITE.title}`}>
+  <Header />
+  <Main pageTitle="文章" pageDesc="所有已发布文章。">
+    {posts.length ? (
+      <ul>
+        {posts.map(post => (
+          <li class="my-6">
+            <a
+              href={`/posts/${post.slug}/`}
+              class:list={[
+                "inline-block text-lg font-medium text-accent",
+                "decoration-dashed underline-offset-4 hover:underline",
+                "focus-visible:no-underline focus-visible:underline-offset-0",
+              ]}
+            >
+              <h2>{post.title}</h2>
+            </a>
+            <Datetime pubDatetime={new Date(post.createdAt)} />
+            <p>{excerpt(post.content)}{post.content.length > 160 ? '...' : ''}</p>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p>暂无已发布文章。</p>
+    )}
+  </Main>
+  <Footer />
+</Layout>

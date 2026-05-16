@@ -1,0 +1,106 @@
+@layer base {
+  .app-prose {
+    @apply text-foreground leading-7;
+  }
+
+  .app-prose h1,
+  .app-prose h2,
+  .app-prose h3,
+  .app-prose h4 {
+    @apply mt-8 mb-3 text-foreground font-semibold leading-tight;
+  }
+
+  .app-prose h1 {
+    @apply text-3xl;
+  }
+
+  .app-prose h2 {
+    @apply text-2xl;
+  }
+
+  .app-prose h3 {
+    @apply text-xl italic;
+  }
+
+  .app-prose p,
+  .app-prose ol,
+  .app-prose ul,
+  .app-prose blockquote,
+  .app-prose pre,
+  .app-prose table {
+    @apply my-5;
+  }
+
+  .app-prose a {
+    @apply wrap-break-word text-accent decoration-dashed underline-offset-4 hover:underline focus-visible:no-underline;
+  }
+
+  .app-prose ul {
+    @apply list-disc ps-6 overflow-x-clip;
+  }
+
+  .app-prose ol {
+    @apply list-decimal ps-6;
+  }
+
+  .app-prose li {
+    @apply my-2 marker:text-accent;
+  }
+
+  .app-prose hr {
+    @apply my-8 border-border;
+  }
+
+  .app-prose img {
+    @apply mx-auto border border-border;
+  }
+
+  .app-prose table {
+    @apply w-full border-collapse text-left;
+  }
+
+  .app-prose th,
+  .app-prose td {
+    @apply border border-border p-2;
+  }
+
+  .app-prose code {
+    @apply rounded bg-muted/75 p-1 wrap-break-word text-foreground;
+  }
+
+  .app-prose pre {
+    @apply overflow-x-auto rounded border border-border bg-muted/50 p-4 focus-visible:border-transparent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-dashed;
+  }
+
+  .app-prose pre code {
+    @apply bg-transparent p-0;
+  }
+
+  .app-prose blockquote {
+    @apply border-s-4 border-accent/80 ps-4 wrap-break-word opacity-80;
+  }
+
+  .astro-code {
+    @apply flex border bg-(--shiki-light-bg) text-(--shiki-light) outline-border [&_span]:text-(--shiki-light);
+  }
+
+  html[data-theme="dark"] .astro-code {
+    @apply bg-(--shiki-dark-bg) text-(--shiki-dark) [&_span]:text-(--shiki-dark);
+  }
+
+  .astro-code .line.diff.add {
+    @apply relative inline-block w-full bg-green-400/20 before:absolute before:-left-3 before:text-green-500 before:content-['+'];
+  }
+
+  .astro-code .line.diff.remove {
+    @apply relative inline-block w-full bg-red-500/20 before:absolute before:-left-3 before:text-red-500 before:content-['-'];
+  }
+
+  .astro-code .line.highlighted {
+    @apply inline-block w-full bg-slate-400/20;
+  }
+
+  .astro-code .highlighted-word {
+    @apply rounded-sm border border-border px-0.5 py-px;
+  }
+}

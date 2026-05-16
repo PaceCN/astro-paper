@@ -1,10 +1,15 @@
 // @ts-check
 import cloudflare from '@astrojs/cloudflare';
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig, sessionDrivers } from 'astro/config';
+import { defineConfig, envField, sessionDrivers } from 'astro/config';
+import { SITE } from './src/config.ts';
 
 export default defineConfig({
+  site: SITE.website,
   output: 'server',
+  devToolbar: {
+    enabled: false
+  },
   adapter: cloudflare({
     imageService: 'passthrough'
   }),
@@ -12,6 +17,22 @@ export default defineConfig({
     driver: sessionDrivers.lruCache()
   },
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    optimizeDeps: {
+      exclude: ['drizzle-orm', 'drizzle-orm/d1']
+    }
+  },
+  image: {
+    responsiveStyles: true,
+    layout: 'constrained'
+  },
+  env: {
+    schema: {
+      PUBLIC_GOOGLE_SITE_VERIFICATION: envField.string({
+        access: 'public',
+        context: 'client',
+        optional: true
+      })
+    }
   }
 });
