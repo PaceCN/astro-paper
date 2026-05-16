@@ -11,60 +11,113 @@ import { SITE } from '@/config';
     <section class="border-b border-border pb-6">
       <p class="text-sm text-muted-foreground">站点后台</p>
       <h1 class="mt-2 text-3xl font-bold text-accent">内容管理</h1>
-      <p class="mt-3 text-muted-foreground">
-        在这里维护 D1 里的文章和广告位。修改会直接写入当前绑定的 Cloudflare D1 数据库。
-      </p>
+      <p class="mt-3 text-muted-foreground">维护 D1 里的文章、广告位，并查看自动化接口说明。</p>
       <div class="mt-4 flex flex-wrap gap-3">
         <a class="rounded border border-border px-3 py-2 hover:text-accent" href="/">返回首页</a>
         <button id="logout-button" class="rounded border border-border px-3 py-2 hover:text-accent" type="button">退出登录</button>
       </div>
     </section>
 
-    <section class="grid gap-4 py-8">
-      <details class="rounded border border-border p-4" open>
-        <summary class="cursor-pointer text-xl font-semibold text-accent">后台与 API 使用说明</summary>
-        <div class="app-prose mt-4 max-w-none text-sm">
-          <p>
-            <code>/api/ads</code> 和 <code>/api/posts</code> 不是普通页面，而是给后台、前台组件和自动化脚本调用的接口。浏览器直接打开它们时看到 JSON 是正常的。
-          </p>
+    <section class="grid gap-6 py-8 lg:grid-cols-[180px_1fr]">
+      <aside class="lg:sticky lg:top-4 lg:self-start">
+        <nav class="grid gap-2 rounded border border-border p-2" aria-label="后台导航">
+          <button class="admin-nav rounded px-3 py-2 text-left text-accent bg-muted/60" type="button" data-panel-target="posts-panel">文章管理</button>
+          <button class="admin-nav rounded px-3 py-2 text-left hover:text-accent" type="button" data-panel-target="ads-panel">广告管理</button>
+          <button class="admin-nav rounded px-3 py-2 text-left hover:text-accent" type="button" data-panel-target="docs-panel">说明</button>
+        </nav>
+      </aside>
 
-          <h3>/api/ads 是干嘛的？</h3>
-          <p>
-            <code>/api/ads</code> 用来读取和保存广告位配置。它不是 Google AdSense 必须要求的页面，只是本站为了方便后台管理广告代码而做的接口。
-          </p>
-          <ul>
-            <li>如果你暂时不放 Google 广告，可以完全不管它。</li>
-            <li>如果你要放 AdSense，先去 Google AdSense 后台创建广告单元，复制 Google 给你的广告代码。</li>
-            <li>再到本页右侧“广告位”里粘贴代码，并勾选启用。</li>
-            <li>前台页面会通过 <code>/api/ads</code> 读取已启用的广告位，然后显示广告代码。</li>
-          </ul>
-          <pre><code>GET /api/ads</code></pre>
-          <p>公开读取已配置广告位。后台保存广告位需要先登录：</p>
-          <pre><code set:html={`PUT /api/ads/content_top
+      <div class="min-w-0">
+        <section id="posts-panel" class="admin-panel space-y-6">
+          <article class="rounded border border-border p-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-xl font-semibold">文章管理</h2>
+                <p class="text-sm text-muted-foreground">新建、编辑、发布、隐藏或删除文章。</p>
+              </div>
+              <button id="new-post-button" class="rounded bg-accent px-3 py-2 text-background" type="button">新建文章</button>
+            </div>
+            <p id="posts-message" class="mt-4 text-sm text-muted-foreground"></p>
+            <ul id="posts-list" class="mt-4 space-y-3"></ul>
+          </article>
+
+          <article class="rounded border border-border p-4">
+            <h2 id="post-form-title" class="text-xl font-semibold">新建文章</h2>
+            <form id="post-form" class="mt-4 space-y-4">
+              <input name="id" type="hidden" />
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">标题</span>
+                <input name="title" class="w-full rounded border border-border bg-background px-3 py-2" required />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">Slug</span>
+                <input name="slug" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="留空时由标题生成" />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">状态</span>
+                <select name="status" class="w-full rounded border border-border bg-background px-3 py-2">
+                  <option value="hidden">隐藏</option>
+                  <option value="published">发布</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">正文 Markdown</span>
+                <textarea name="content" class="min-h-80 w-full rounded border border-border bg-background px-3 py-2 font-mono text-sm" required></textarea>
+              </label>
+              <div class="flex flex-wrap gap-3">
+                <button class="rounded bg-accent px-4 py-2 text-background" type="submit">保存文章</button>
+                <button id="reset-post-form" class="rounded border border-border px-4 py-2" type="button">清空</button>
+              </div>
+              <p id="post-form-message" class="text-sm text-muted-foreground"></p>
+            </form>
+          </article>
+        </section>
+
+        <section id="ads-panel" class="admin-panel hidden">
+          <article class="rounded border border-border p-4">
+            <h2 class="text-xl font-semibold">广告管理</h2>
+            <p class="mt-2 text-sm text-muted-foreground">填入 Google AdSense 等广告代码并启用后，前台对应位置会显示。不放广告时可以留空。</p>
+            <div id="ads-list" class="mt-4 grid gap-4 md:grid-cols-2"></div>
+            <p id="ads-message" class="mt-4 text-sm text-muted-foreground"></p>
+          </article>
+        </section>
+
+        <section id="docs-panel" class="admin-panel hidden">
+          <article class="rounded border border-border p-4">
+            <h2 class="text-xl font-semibold text-accent">后台与 API 使用说明</h2>
+            <div class="app-prose mt-4 max-w-none text-sm">
+              <p><code>/api/ads</code> 和 <code>/api/posts</code> 不是普通页面，而是给后台、前台组件和自动化脚本调用的接口。浏览器直接打开它们时看到 JSON 是正常的。</p>
+              <h3>/api/ads 是干嘛的？</h3>
+              <p><code>/api/ads</code> 用来读取和保存广告位配置。它不是 Google AdSense 必须要求的页面，只是本站为了方便后台管理广告代码而做的接口。</p>
+              <ul>
+                <li>暂时不放 Google 广告时，可以完全不管它。</li>
+                <li>要放 AdSense 时，先去 Google AdSense 后台创建广告单元，复制广告代码。</li>
+                <li>再到“广告管理”里粘贴代码，并勾选启用。</li>
+                <li>前台页面会通过 <code>/api/ads</code> 读取已启用广告位。</li>
+              </ul>
+              <pre><code>GET /api/ads</code></pre>
+              <p>保存广告位需要先登录：</p>
+              <pre><code set:html={`PUT /api/ads/content_top
 Content-Type: application/json
 
 {
   &quot;adCode&quot;: &quot;&amp;lt;ins class=&amp;quot;adsbygoogle&amp;quot; ...&amp;gt;&amp;lt;/ins&amp;gt;&quot;,
   &quot;isEnabled&quot;: true
 }`} /></pre>
-
-          <h3>/api/posts 能不能给 AI 正常发送文章？</h3>
-          <p>
-            可以。AI、脚本或自动化工具只要先登录拿到 session cookie，就可以调用 <code>/api/posts</code> 创建文章。文章正文使用 Markdown，保存到 D1 数据库。
-          </p>
-          <p>推荐流程是：</p>
-          <ol>
-            <li>调用 <code>POST /api/auth/login</code>，用 <code>ADMIN_PASSWORD</code> 登录。</li>
-            <li>保存响应里的 cookie。</li>
-            <li>带着 cookie 调用 <code>POST /api/posts</code> 创建文章。</li>
-          </ol>
-          <pre><code set:html={`POST /api/auth/login
+              <h3>/api/posts 能不能给 AI 正常发送文章？</h3>
+              <p>可以。AI、脚本或自动化工具只要先登录拿到 session cookie，就可以调用 <code>/api/posts</code> 创建文章。正文使用 Markdown，保存到 D1 数据库。</p>
+              <ol>
+                <li>调用 <code>POST /api/auth/login</code>，用 <code>ADMIN_PASSWORD</code> 登录。</li>
+                <li>保存响应里的 cookie。</li>
+                <li>带着 cookie 调用 <code>POST /api/posts</code> 创建文章。</li>
+              </ol>
+              <pre><code set:html={`POST /api/auth/login
 Content-Type: application/json
 
 {
   &quot;password&quot;: &quot;你的 ADMIN_PASSWORD&quot;
 }`} /></pre>
-          <pre><code set:html={`POST /api/posts
+              <pre><code set:html={`POST /api/posts
 Content-Type: application/json
 Cookie: session=登录接口返回的 session cookie
 
@@ -72,85 +125,29 @@ Cookie: session=登录接口返回的 session cookie
   &quot;title&quot;: &quot;文章标题&quot;,
   &quot;slug&quot;: &quot;article-slug&quot;,
   &quot;status&quot;: &quot;hidden&quot;,
-  &quot;content&quot;: &quot;# Markdown 正文\n\n这里写文章内容。&quot;
+  &quot;content&quot;: &quot;# Markdown 正文\\n\\n这里写文章内容。&quot;
 }`} /></pre>
-          <p>
-            <code>status</code> 可以是 <code>hidden</code> 或 <code>published</code>。建议 AI 默认先发 <code>hidden</code>，人工检查后再发布。
-          </p>
-
-          <h3>文章接口速查</h3>
-          <ul>
-            <li><code>GET /api/posts?status=published&amp;pageSize=20</code>：公开读取已发布文章，前台首页和文章列表会用到。</li>
-            <li><code>GET /api/posts/:slug</code>：公开读取单篇已发布文章。</li>
-            <li><code>GET /api/posts?pageSize=50</code>：登录后读取所有文章。</li>
-            <li><code>POST /api/posts</code>：登录后创建文章。</li>
-            <li><code>PUT /api/posts/:id</code>：登录后更新文章标题、slug、正文。</li>
-            <li><code>PATCH /api/posts/:id/status</code>：登录后发布或隐藏文章。</li>
-            <li><code>DELETE /api/posts/:id</code>：登录后删除文章。</li>
-          </ul>
-
-          <h3>安全提醒</h3>
-          <ul>
-            <li>不要把 <code>ADMIN_PASSWORD</code>、<code>JWT_SECRET</code> 或登录后的 cookie 发给不可信工具。</li>
-            <li>自动化发布建议默认保存为 <code>hidden</code>，人工确认后再改成 <code>published</code>。</li>
-            <li>广告代码支持 HTML 注入，只应粘贴你信任的 Google AdSense 代码。</li>
-          </ul>
-        </div>
-      </details>
-    </section>
-
-    <section class="grid gap-6 pb-8 lg:grid-cols-[1fr_320px]">
-      <div class="space-y-6">
-        <article class="rounded border border-border p-4">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 class="text-xl font-semibold">文章</h2>
-              <p class="text-sm text-muted-foreground">新建、编辑、发布、隐藏或删除文章。</p>
+              <p><code>status</code> 可以是 <code>hidden</code> 或 <code>published</code>。建议 AI 默认先发 <code>hidden</code>，人工检查后再发布。</p>
+              <h3>文章接口速查</h3>
+              <ul>
+                <li><code>GET /api/posts?status=published&amp;pageSize=20</code>：公开读取已发布文章。</li>
+                <li><code>GET /api/posts/:slug</code>：公开读取单篇已发布文章。</li>
+                <li><code>GET /api/posts?pageSize=50</code>：登录后读取所有文章。</li>
+                <li><code>POST /api/posts</code>：登录后创建文章。</li>
+                <li><code>PUT /api/posts/:id</code>：登录后更新文章。</li>
+                <li><code>PATCH /api/posts/:id/status</code>：登录后发布或隐藏文章。</li>
+                <li><code>DELETE /api/posts/:id</code>：登录后删除文章。</li>
+              </ul>
+              <h3>安全提醒</h3>
+              <ul>
+                <li>不要把 <code>ADMIN_PASSWORD</code>、<code>JWT_SECRET</code> 或登录后的 cookie 发给不可信工具。</li>
+                <li>自动化发布建议默认保存为 <code>hidden</code>，人工确认后再改成 <code>published</code>。</li>
+                <li>广告代码支持 HTML 注入，只应粘贴你信任的 Google AdSense 代码。</li>
+              </ul>
             </div>
-            <button id="new-post-button" class="rounded bg-accent px-3 py-2 text-background" type="button">新建文章</button>
-          </div>
-          <p id="posts-message" class="mt-4 text-sm text-muted-foreground"></p>
-          <ul id="posts-list" class="mt-4 space-y-3"></ul>
-        </article>
-
-        <article class="rounded border border-border p-4">
-          <h2 id="post-form-title" class="text-xl font-semibold">新建文章</h2>
-          <form id="post-form" class="mt-4 space-y-4">
-            <input name="id" type="hidden" />
-            <label class="block">
-              <span class="mb-1 block text-sm text-muted-foreground">标题</span>
-              <input name="title" class="w-full rounded border border-border bg-background px-3 py-2" required />
-            </label>
-            <label class="block">
-              <span class="mb-1 block text-sm text-muted-foreground">Slug</span>
-              <input name="slug" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="留空时由标题生成" />
-            </label>
-            <label class="block">
-              <span class="mb-1 block text-sm text-muted-foreground">状态</span>
-              <select name="status" class="w-full rounded border border-border bg-background px-3 py-2">
-                <option value="hidden">隐藏</option>
-                <option value="published">发布</option>
-              </select>
-            </label>
-            <label class="block">
-              <span class="mb-1 block text-sm text-muted-foreground">正文 Markdown</span>
-              <textarea name="content" class="min-h-80 w-full rounded border border-border bg-background px-3 py-2 font-mono text-sm" required></textarea>
-            </label>
-            <div class="flex flex-wrap gap-3">
-              <button class="rounded bg-accent px-4 py-2 text-background" type="submit">保存文章</button>
-              <button id="reset-post-form" class="rounded border border-border px-4 py-2" type="button">清空</button>
-            </div>
-            <p id="post-form-message" class="text-sm text-muted-foreground"></p>
-          </form>
-        </article>
+          </article>
+        </section>
       </div>
-
-      <aside class="rounded border border-border p-4 lg:sticky lg:top-4 lg:self-start">
-        <h2 class="text-xl font-semibold">广告位</h2>
-        <p class="mt-2 text-sm text-muted-foreground">填入广告代码并启用后，前台对应位置会显示。</p>
-        <div id="ads-list" class="mt-4 space-y-4"></div>
-        <p id="ads-message" class="mt-4 text-sm text-muted-foreground"></p>
-      </aside>
     </section>
   </main>
   <Footer />
@@ -187,6 +184,16 @@ Cookie: session=登录接口返回的 session cookie
     if (element) element.textContent = text;
   }
 
+  function showPanel(panelId) {
+    document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('hidden', panel.id !== panelId));
+    document.querySelectorAll('.admin-nav').forEach(button => {
+      const active = button.dataset.panelTarget === panelId;
+      button.classList.toggle('text-accent', active);
+      button.classList.toggle('bg-muted/60', active);
+    });
+    history.replaceState(null, '', `#${panelId.replace('-panel', '')}`);
+  }
+
   function excerpt(content) {
     return String(content || '').replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 90);
   }
@@ -203,26 +210,22 @@ Cookie: session=登录接口返回的 session cookie
     try {
       const data = await api('posts?pageSize=50');
       const posts = data.posts || [];
-      if (!posts.length) {
-        postsList.innerHTML = '<li class="text-sm text-muted-foreground">还没有文章。</li>';
-      } else {
-        postsList.innerHTML = posts.map(post => `
-          <li class="rounded border border-border p-3" data-post-id="${post.id}">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h3 class="font-semibold">${escapeHtml(post.title)}</h3>
-                <p class="text-sm text-muted-foreground">/${escapeHtml(post.slug)} · ${post.status === 'published' ? '已发布' : '隐藏'}</p>
-                <p class="mt-2 text-sm">${escapeHtml(excerpt(post.content))}</p>
-              </div>
-              <div class="flex flex-wrap gap-2 text-sm">
-                <button class="rounded border border-border px-2 py-1" data-edit="${post.id}" type="button">编辑</button>
-                <button class="rounded border border-border px-2 py-1" data-toggle="${post.id}" data-status="${post.status === 'published' ? 'hidden' : 'published'}" type="button">${post.status === 'published' ? '隐藏' : '发布'}</button>
-                <button class="rounded border border-border px-2 py-1 text-red-500" data-delete="${post.id}" type="button">删除</button>
-              </div>
+      postsList.innerHTML = posts.length ? posts.map(post => `
+        <li class="rounded border border-border p-3" data-post-id="${post.id}">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 class="font-semibold">${escapeHtml(post.title)}</h3>
+              <p class="text-sm text-muted-foreground">/${escapeHtml(post.slug)} · ${post.status === 'published' ? '已发布' : '隐藏'}</p>
+              <p class="mt-2 text-sm">${escapeHtml(excerpt(post.content))}</p>
             </div>
-          </li>
-        `).join('');
-      }
+            <div class="flex flex-wrap gap-2 text-sm">
+              <button class="rounded border border-border px-2 py-1" data-edit="${post.id}" type="button">编辑</button>
+              <button class="rounded border border-border px-2 py-1" data-toggle="${post.id}" data-status="${post.status === 'published' ? 'hidden' : 'published'}" type="button">${post.status === 'published' ? '隐藏' : '发布'}</button>
+              <button class="rounded border border-border px-2 py-1 text-red-500" data-delete="${post.id}" type="button">删除</button>
+            </div>
+          </div>
+        </li>
+      `).join('') : '<li class="text-sm text-muted-foreground">还没有文章。</li>';
       window.adminPosts = posts;
       setText(postsMessage, `已读取 ${posts.length} 篇文章。`);
     } catch (error) {
@@ -265,6 +268,13 @@ Cookie: session=登录接口返回的 session cookie
       .replaceAll("'", '&#039;');
   }
 
+  document.querySelectorAll('.admin-nav').forEach(button => {
+    button.addEventListener('click', () => showPanel(button.dataset.panelTarget));
+  });
+
+  const initialPanel = `${location.hash.replace('#', '') || 'posts'}-panel`;
+  showPanel(document.getElementById(initialPanel) ? initialPanel : 'posts-panel');
+
   document.querySelector('#new-post-button')?.addEventListener('click', resetPostForm);
   document.querySelector('#reset-post-form')?.addEventListener('click', resetPostForm);
 
@@ -294,6 +304,7 @@ Cookie: session=登录接口返回的 session cookie
       postForm.content.value = post.content;
       setText(postFormTitle, `编辑：${post.title}`);
       setText(postFormMessage, '');
+      showPanel('posts-panel');
       postForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }

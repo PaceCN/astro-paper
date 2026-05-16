@@ -3,13 +3,94 @@ import Layout from '@/layouts/Layout.astro';
 import Main from '@/layouts/Main.astro';
 import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
+import Datetime from '@/components/Datetime.astro';
 import { SITE } from '@/config';
+
+type Post = {
+  id: number;
+  title: string;
+  slug: string;
+  content: string;
+  createdAt: string | number;
+};
+
+let posts: Post[] = [];
+
+function excerpt(content: string) {
+  return content.replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 140);
+}
+
+try {
+  const response = await fetch(new URL('/api/posts?status=published&pageSize=50', Astro.url));
+  const result = await response.json() as { success: boolean; data?: { posts: Post[] } };
+  posts = result.data?.posts ?? [];
+} catch {
+  posts = [];
+}
 ---
 
 <Layout title={`搜索 | ${SITE.title}`}>
   <Header />
-  <Main pageTitle="搜索" pageDesc="站内搜索还在接入中，先用文章列表翻一翻。">
-    <p class="text-muted-foreground">搜索功能暂时还没开放。等 D1 文章、标签和索引稳定后，会把它补上。
+  <Main pageTitle="搜索" pageDesc="按标题、slug 和正文内容搜索已发布文章。">
+    <div class="space-y-5">
+      <label class="block">
+        <span class="mb-2 block text-sm text-muted-foreground">搜索关键词</span>
+        <input
+          id="search-input"
+          class="w-full rounded border border-border bg-background px-3 py-2"
+          type="search"
+          autocomplete="off"
+          placeholder="输入关键词，例如 Cloudflare、D1、AI..."
+        />
+      </label>
+      <p id="search-summary" class="text-sm text-muted-foreground">共 {posts.length} 篇已发布文章。</p>
+      <ul id="search-results" class="space-y-5">
+        {posts.map(post => (
+          <li class="search-item rounded border border-border p-4" data-search={`${post.title} ${post.slug} ${post.content}`.toLowerCase()}>
+            <a
+              href={`/posts/${post.slug}/`}
+              class="inline-block text-lg font-medium text-accent decoration-dashed underline-offset-4 hover:underline"
+            >
+              <h2>{post.title}</h2>
+            </a>
+            <Datetime pubDatetime={new Date(post.createdAt)} />
+            <p>{excerpt(post.content)}{post.content.length > 140 ? '...' : ''}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
   </Main>
   <Footer />
 </Layout>
+
+<script>
+  const input = document.querySelector('#search-input');
+  const summary = document.querySelector('#search-summary');
+  const items = [...document.querySelectorAll('.search-item')];
+
+  function updateSearch() {
+    const query = input?.value.trim().toLowerCase() || '';
+    let visible = 0;
+
+    items.forEach(item => {
+      const matched = !query || item.dataset.search?.includes(query);
+      item.classList.toggle('hidden', !matched);
+      if (matched) visible += 1;
+    });
+
+    if (summary) {
+      summary.textContent = query
+        ? `找到 ${visible} 篇匹配文章。`
+        : `共 ${items.length} 篇已发布文章。`;
+    }
+  }
+
+  input?.addEventListener('input', updateSearch);
+
+  const params = new URLSearchParams(window.location.search);
+  const initialQuery = params.get('q');
+  if (initialQuery && input) {
+    input.value = initialQuery;
+    updateSearch();
+  }
+</script>

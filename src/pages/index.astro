@@ -5,7 +5,6 @@ import Footer from '@/components/Footer.astro';
 import Datetime from '@/components/Datetime.astro';
 import LinkButton from '@/components/LinkButton.astro';
 import AdSlot from '@/components/AdSlot.astro';
-import IconRss from '@/assets/icons/IconRss.svg';
 import IconArrowRight from '@/assets/icons/IconArrowRight.svg';
 import { SITE } from '@/config';
 
@@ -35,26 +34,10 @@ try {
 <Layout>
   <Header />
   <main id="main-content" data-layout="index" class="app-layout">
-    <section id="hero" class:list={["pt-8 pb-6", "border-b border-border"]}>
-      <h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">
-        写给自己，也写给后来踩坑的人
-      </h1>
-      <a target="_blank" href="/rss.xml" class="inline-block" aria-label="rss feed" title="RSS Feed">
-        <IconRss width={20} height={20} class="scale-125 stroke-accent stroke-3 rtl:-rotate-90" />
-        <span class="sr-only">RSS Feed</span>
-      </a>
-      <p>
-        这里是 Pace Notes，一个偏个人记录的技术博客。我会把 AI 工具、自动化脚本、Cloudflare、VPS 和独立博客搭建中的真实尝试写下来。
-      </p>
-      <p class="mt-2">
-        不追热点，也不装成教程站。能跑通的写步骤，没想明白的写疑问，踩过的坑尽量留下上下文。
-      </p>
-    </section>
-
     <AdSlot slot="homeAfterHero" class="max-w-app" />
 
-    <section id="recent-posts" class="pt-12 pb-6">
-      <h2 class="text-2xl font-semibold tracking-wide">最新文章</h2>
+    <section id="recent-posts" class="pt-8 pb-6">
+      <h1 class="text-2xl font-semibold tracking-wide">最新文章</h1>
       {posts.length ? (
         <ul>
           {posts.map(post => (
@@ -67,7 +50,7 @@ try {
                   "focus-visible:no-underline focus-visible:underline-offset-0",
                 ]}
               >
-                <h3>{post.title}</h3>
+                <h2>{post.title}</h2>
               </a>
               <Datetime pubDatetime={new Date(post.createdAt)} />
               <p>{excerpt(post.content)}{post.content.length > 160 ? '...' : ''}</p>
