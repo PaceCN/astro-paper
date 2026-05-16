@@ -1,0 +1,4 @@
+name = "boke"
+pages_build_output_dir = "dist-pages"
+compatibility_date = "2025-12-01"
+compatibility_flags = ["nodejs_compat"]

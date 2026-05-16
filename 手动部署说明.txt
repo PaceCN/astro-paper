@@ -3,12 +3,11 @@
 1. 安装依赖
    在项目目录运行：
    npm install
-   当前会话因权限策略未能自动安装新增依赖，所以安装后请再运行 npm run build 验证。
+   然后运行 npm run build 验证。
 
 2. 创建 Cloudflare D1 数据库
-   复制 wrangler.example.toml 为本地 wrangler.toml。
-   将 wrangler.toml 中的 database_name 和 database_id 改成你的 D1 数据库信息。
-   wrangler.toml 已加入 .gitignore，不要提交真实 database_id。
+   在 Cloudflare Dashboard 创建 D1 数据库，例如：blogdb。
+   不要把真实 database_id 提交到 GitHub。
 
 3. 配置 Cloudflare Pages 绑定
    在 Pages 项目 Settings -> Functions -> D1 database bindings 中新增绑定：
@@ -21,9 +20,17 @@
    ADMIN_PASSWORD=后台登录密码，可后续直接在 Cloudflare 中修改
 
 5. 推送数据库迁移
-   wrangler.toml 已在 [[d1_databases]] 内配置 migrations_dir = "drizzle"。
-   本地登录 wrangler 后运行：
+   如果用 wrangler CLI 推送迁移，在本地 wrangler.toml 末尾临时追加 D1 配置：
+   [[d1_databases]]
+   binding = "DB"
+   database_name = "blogdb"
+   database_id = "你的 D1 database_id"
+   migrations_dir = "drizzle"
+
+   然后运行：
    npx wrangler d1 migrations apply blogdb --remote
+
+   如果不想在本地配置 database_id，也可以直接在 Cloudflare D1 控制台执行 drizzle 目录里的 SQL。
 
 6. 后台登录方式
    访问 /login，只输入 ADMIN_PASSWORD 对应的后台密码即可登录。
@@ -33,7 +40,8 @@
    将代码推送到 GitHub，并在 Cloudflare Pages 连接该仓库。
    构建命令：npm run build
    输出目录：dist-pages
-   该项目是 SSR，dist-pages 中会生成 _worker.js，Pages 必须使用这个目录而不是 dist。
+   根目录：留空
+   项目是 SSR，dist-pages 中会生成 _worker.js，Pages 必须使用这个目录而不是 dist。
 
 8. 安全开关
    部署后在 Cloudflare Dashboard 按需开启 Bots 保护和基础 WAF。
