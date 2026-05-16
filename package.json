@@ -7,8 +7,8 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
-    "preview": "wrangler pages dev ./dist",
+    "build": "astro build && node scripts/prepare-pages-output.mjs",
+    "preview": "wrangler pages dev ./dist-pages",
     "astro": "astro",
     "db:generate": "drizzle-kit generate",
     "db:local": "wrangler d1 migrations apply blogdb --local",

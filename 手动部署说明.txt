@@ -32,7 +32,8 @@
 7. 部署到 Cloudflare Pages
    将代码推送到 GitHub，并在 Cloudflare Pages 连接该仓库。
    构建命令：npm run build
-   输出目录：dist
+   输出目录：dist-pages
+   该项目是 SSR，dist-pages 中会生成 _worker.js，Pages 必须使用这个目录而不是 dist。
 
 8. 安全开关
    部署后在 Cloudflare Dashboard 按需开启 Bots 保护和基础 WAF。

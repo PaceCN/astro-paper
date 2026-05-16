@@ -1,3 +1,4 @@
+import { env } from 'cloudflare:workers';
 import { eq, sql } from 'drizzle-orm';
 import { Hono, type Context } from 'hono';
 import type { APIContext } from 'astro';
@@ -167,6 +168,5 @@ app.put('/ads/:position', async (c) => {
 });
 
 export const ALL = async (context: APIContext) => {
-  const runtime = context.locals.runtime;
-  return app.fetch(context.request, runtime.env);
+  return app.fetch(context.request, env);
 };
