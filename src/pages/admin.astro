@@ -1,0 +1,370 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+import { SITE } from '@/config';
+---
+
+<Layout title={`后台 | ${SITE.title}`}>
+  <Header />
+  <main id="main-content" class="app-layout py-8">
+    <section class="border-b border-border pb-6">
+      <p class="text-sm text-muted-foreground">站点后台</p>
+      <h1 class="mt-2 text-3xl font-bold text-accent">内容管理</h1>
+      <p class="mt-3 text-muted-foreground">
+        在这里维护 D1 里的文章和广告位。修改会直接写入当前绑定的 Cloudflare D1 数据库。
+      </p>
+      <div class="mt-4 flex flex-wrap gap-3">
+        <a class="rounded border border-border px-3 py-2 hover:text-accent" href="/">返回首页</a>
+        <button id="logout-button" class="rounded border border-border px-3 py-2 hover:text-accent" type="button">退出登录</button>
+      </div>
+    </section>
+
+    <section class="grid gap-4 py-8">
+      <details class="rounded border border-border p-4" open>
+        <summary class="cursor-pointer text-xl font-semibold text-accent">后台与 API 使用说明</summary>
+        <div class="app-prose mt-4 max-w-none text-sm">
+          <p>
+            <code>/api/ads</code> 和 <code>/api/posts</code> 不是普通页面，而是给后台、前台组件和自动化脚本调用的接口。浏览器直接打开它们时看到 JSON 是正常的。
+          </p>
+
+          <h3>/api/ads 是干嘛的？</h3>
+          <p>
+            <code>/api/ads</code> 用来读取和保存广告位配置。它不是 Google AdSense 必须要求的页面，只是本站为了方便后台管理广告代码而做的接口。
+          </p>
+          <ul>
+            <li>如果你暂时不放 Google 广告，可以完全不管它。</li>
+            <li>如果你要放 AdSense，先去 Google AdSense 后台创建广告单元，复制 Google 给你的广告代码。</li>
+            <li>再到本页右侧“广告位”里粘贴代码，并勾选启用。</li>
+            <li>前台页面会通过 <code>/api/ads</code> 读取已启用的广告位，然后显示广告代码。</li>
+          </ul>
+          <pre><code>GET /api/ads</code></pre>
+          <p>公开读取已配置广告位。后台保存广告位需要先登录：</p>
+          <pre><code set:html={`PUT /api/ads/content_top
+Content-Type: application/json
+
+{
+  &quot;adCode&quot;: &quot;&amp;lt;ins class=&amp;quot;adsbygoogle&amp;quot; ...&amp;gt;&amp;lt;/ins&amp;gt;&quot;,
+  &quot;isEnabled&quot;: true
+}`} /></pre>
+
+          <h3>/api/posts 能不能给 AI 正常发送文章？</h3>
+          <p>
+            可以。AI、脚本或自动化工具只要先登录拿到 session cookie，就可以调用 <code>/api/posts</code> 创建文章。文章正文使用 Markdown，保存到 D1 数据库。
+          </p>
+          <p>推荐流程是：</p>
+          <ol>
+            <li>调用 <code>POST /api/auth/login</code>，用 <code>ADMIN_PASSWORD</code> 登录。</li>
+            <li>保存响应里的 cookie。</li>
+            <li>带着 cookie 调用 <code>POST /api/posts</code> 创建文章。</li>
+          </ol>
+          <pre><code set:html={`POST /api/auth/login
+Content-Type: application/json
+
+{
+  &quot;password&quot;: &quot;你的 ADMIN_PASSWORD&quot;
+}`} /></pre>
+          <pre><code set:html={`POST /api/posts
+Content-Type: application/json
+Cookie: session=登录接口返回的 session cookie
+
+{
+  &quot;title&quot;: &quot;文章标题&quot;,
+  &quot;slug&quot;: &quot;article-slug&quot;,
+  &quot;status&quot;: &quot;hidden&quot;,
+  &quot;content&quot;: &quot;# Markdown 正文\n\n这里写文章内容。&quot;
+}`} /></pre>
+          <p>
+            <code>status</code> 可以是 <code>hidden</code> 或 <code>published</code>。建议 AI 默认先发 <code>hidden</code>，人工检查后再发布。
+          </p>
+
+          <h3>文章接口速查</h3>
+          <ul>
+            <li><code>GET /api/posts?status=published&amp;pageSize=20</code>：公开读取已发布文章，前台首页和文章列表会用到。</li>
+            <li><code>GET /api/posts/:slug</code>：公开读取单篇已发布文章。</li>
+            <li><code>GET /api/posts?pageSize=50</code>：登录后读取所有文章。</li>
+            <li><code>POST /api/posts</code>：登录后创建文章。</li>
+            <li><code>PUT /api/posts/:id</code>：登录后更新文章标题、slug、正文。</li>
+            <li><code>PATCH /api/posts/:id/status</code>：登录后发布或隐藏文章。</li>
+            <li><code>DELETE /api/posts/:id</code>：登录后删除文章。</li>
+          </ul>
+
+          <h3>安全提醒</h3>
+          <ul>
+            <li>不要把 <code>ADMIN_PASSWORD</code>、<code>JWT_SECRET</code> 或登录后的 cookie 发给不可信工具。</li>
+            <li>自动化发布建议默认保存为 <code>hidden</code>，人工确认后再改成 <code>published</code>。</li>
+            <li>广告代码支持 HTML 注入，只应粘贴你信任的 Google AdSense 代码。</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <section class="grid gap-6 pb-8 lg:grid-cols-[1fr_320px]">
+      <div class="space-y-6">
+        <article class="rounded border border-border p-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-semibold">文章</h2>
+              <p class="text-sm text-muted-foreground">新建、编辑、发布、隐藏或删除文章。</p>
+            </div>
+            <button id="new-post-button" class="rounded bg-accent px-3 py-2 text-background" type="button">新建文章</button>
+          </div>
+          <p id="posts-message" class="mt-4 text-sm text-muted-foreground"></p>
+          <ul id="posts-list" class="mt-4 space-y-3"></ul>
+        </article>
+
+        <article class="rounded border border-border p-4">
+          <h2 id="post-form-title" class="text-xl font-semibold">新建文章</h2>
+          <form id="post-form" class="mt-4 space-y-4">
+            <input name="id" type="hidden" />
+            <label class="block">
+              <span class="mb-1 block text-sm text-muted-foreground">标题</span>
+              <input name="title" class="w-full rounded border border-border bg-background px-3 py-2" required />
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-sm text-muted-foreground">Slug</span>
+              <input name="slug" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="留空时由标题生成" />
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-sm text-muted-foreground">状态</span>
+              <select name="status" class="w-full rounded border border-border bg-background px-3 py-2">
+                <option value="hidden">隐藏</option>
+                <option value="published">发布</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-sm text-muted-foreground">正文 Markdown</span>
+              <textarea name="content" class="min-h-80 w-full rounded border border-border bg-background px-3 py-2 font-mono text-sm" required></textarea>
+            </label>
+            <div class="flex flex-wrap gap-3">
+              <button class="rounded bg-accent px-4 py-2 text-background" type="submit">保存文章</button>
+              <button id="reset-post-form" class="rounded border border-border px-4 py-2" type="button">清空</button>
+            </div>
+            <p id="post-form-message" class="text-sm text-muted-foreground"></p>
+          </form>
+        </article>
+      </div>
+
+      <aside class="rounded border border-border p-4 lg:sticky lg:top-4 lg:self-start">
+        <h2 class="text-xl font-semibold">广告位</h2>
+        <p class="mt-2 text-sm text-muted-foreground">填入广告代码并启用后，前台对应位置会显示。</p>
+        <div id="ads-list" class="mt-4 space-y-4"></div>
+        <p id="ads-message" class="mt-4 text-sm text-muted-foreground"></p>
+      </aside>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  const postForm = document.querySelector('#post-form');
+  const postsList = document.querySelector('#posts-list');
+  const postsMessage = document.querySelector('#posts-message');
+  const postFormTitle = document.querySelector('#post-form-title');
+  const postFormMessage = document.querySelector('#post-form-message');
+  const adsList = document.querySelector('#ads-list');
+  const adsMessage = document.querySelector('#ads-message');
+
+  const positionLabels = {
+    header_bottom: '页头下方',
+    sidebar_top: '侧边栏顶部',
+    content_top: '正文上方',
+    content_bottom: '正文下方',
+    footer_top: '页脚上方',
+  };
+
+  async function api(path, options = {}) {
+    const response = await fetch(`/api/${path}`, {
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+      ...options,
+    });
+    const result = await response.json().catch(() => ({ success: false, message: '接口返回格式错误' }));
+    if (!response.ok || !result.success) throw new Error(result.message || '请求失败');
+    return result.data ?? result;
+  }
+
+  function setText(element, text) {
+    if (element) element.textContent = text;
+  }
+
+  function excerpt(content) {
+    return String(content || '').replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 90);
+  }
+
+  function resetPostForm() {
+    postForm?.reset();
+    if (postForm?.id) postForm.id.value = '';
+    setText(postFormTitle, '新建文章');
+    setText(postFormMessage, '');
+  }
+
+  async function loadPosts() {
+    setText(postsMessage, '正在读取文章...');
+    try {
+      const data = await api('posts?pageSize=50');
+      const posts = data.posts || [];
+      if (!posts.length) {
+        postsList.innerHTML = '<li class="text-sm text-muted-foreground">还没有文章。</li>';
+      } else {
+        postsList.innerHTML = posts.map(post => `
+          <li class="rounded border border-border p-3" data-post-id="${post.id}">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 class="font-semibold">${escapeHtml(post.title)}</h3>
+                <p class="text-sm text-muted-foreground">/${escapeHtml(post.slug)} · ${post.status === 'published' ? '已发布' : '隐藏'}</p>
+                <p class="mt-2 text-sm">${escapeHtml(excerpt(post.content))}</p>
+              </div>
+              <div class="flex flex-wrap gap-2 text-sm">
+                <button class="rounded border border-border px-2 py-1" data-edit="${post.id}" type="button">编辑</button>
+                <button class="rounded border border-border px-2 py-1" data-toggle="${post.id}" data-status="${post.status === 'published' ? 'hidden' : 'published'}" type="button">${post.status === 'published' ? '隐藏' : '发布'}</button>
+                <button class="rounded border border-border px-2 py-1 text-red-500" data-delete="${post.id}" type="button">删除</button>
+              </div>
+            </div>
+          </li>
+        `).join('');
+      }
+      window.adminPosts = posts;
+      setText(postsMessage, `已读取 ${posts.length} 篇文章。`);
+    } catch (error) {
+      setText(postsMessage, `读取文章失败：${error.message}`);
+      if (String(error.message).includes('未登录')) window.location.href = '/login';
+    }
+  }
+
+  async function loadAds() {
+    setText(adsMessage, '正在读取广告位...');
+    try {
+      const data = await api('ads');
+      const slots = data.adSlots || [];
+      adsList.innerHTML = slots.map(slot => `
+        <form class="rounded border border-border p-3" data-ad-form="${slot.position}">
+          <h3 class="font-semibold">${positionLabels[slot.position] || slot.position}</h3>
+          <label class="mt-3 flex items-center gap-2 text-sm">
+            <input name="isEnabled" type="checkbox" ${slot.isEnabled ? 'checked' : ''} />
+            启用
+          </label>
+          <label class="mt-3 block">
+            <span class="mb-1 block text-sm text-muted-foreground">广告代码</span>
+            <textarea name="adCode" class="min-h-28 w-full rounded border border-border bg-background px-3 py-2 font-mono text-xs">${escapeHtml(slot.adCode || '')}</textarea>
+          </label>
+          <button class="mt-3 rounded bg-accent px-3 py-2 text-sm text-background" type="submit">保存广告位</button>
+        </form>
+      `).join('');
+      setText(adsMessage, `已读取 ${slots.length} 个广告位。`);
+    } catch (error) {
+      setText(adsMessage, `读取广告位失败：${error.message}`);
+    }
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  document.querySelector('#new-post-button')?.addEventListener('click', resetPostForm);
+  document.querySelector('#reset-post-form')?.addEventListener('click', resetPostForm);
+
+  document.querySelector('#logout-button')?.addEventListener('click', async () => {
+    try {
+      await api('auth/logout', { method: 'POST' });
+    } finally {
+      window.location.href = '/login';
+    }
+  });
+
+  postsList?.addEventListener('click', async event => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const posts = window.adminPosts || [];
+    const editId = target.dataset.edit;
+    const toggleId = target.dataset.toggle;
+    const deleteId = target.dataset.delete;
+
+    if (editId) {
+      const post = posts.find(item => String(item.id) === editId);
+      if (!post || !postForm) return;
+      postForm.id.value = post.id;
+      postForm.title.value = post.title;
+      postForm.slug.value = post.slug;
+      postForm.status.value = post.status;
+      postForm.content.value = post.content;
+      setText(postFormTitle, `编辑：${post.title}`);
+      setText(postFormMessage, '');
+      postForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    if (toggleId) {
+      try {
+        await api(`posts/${toggleId}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: target.dataset.status }),
+        });
+        await loadPosts();
+      } catch (error) {
+        setText(postsMessage, `状态更新失败：${error.message}`);
+      }
+      return;
+    }
+
+    if (deleteId) {
+      if (!confirm('确定删除这篇文章吗？这个操作不能撤销。')) return;
+      try {
+        await api(`posts/${deleteId}`, { method: 'DELETE' });
+        await loadPosts();
+      } catch (error) {
+        setText(postsMessage, `删除失败：${error.message}`);
+      }
+    }
+  });
+
+  postForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const id = form.id.value;
+    const payload = {
+      title: form.title.value,
+      slug: form.slug.value,
+      status: form.status.value,
+      content: form.content.value,
+    };
+    try {
+      setText(postFormMessage, '正在保存...');
+      await api(id ? `posts/${id}` : 'posts', {
+        method: id ? 'PUT' : 'POST',
+        body: JSON.stringify(payload),
+      });
+      setText(postFormMessage, '保存成功。');
+      resetPostForm();
+      await loadPosts();
+    } catch (error) {
+      setText(postFormMessage, `保存失败：${error.message}`);
+    }
+  });
+
+  adsList?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const form = event.target;
+    const position = form.dataset.adForm;
+    try {
+      await api(`ads/${position}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          adCode: form.adCode.value,
+          isEnabled: form.isEnabled.checked,
+        }),
+      });
+      setText(adsMessage, `${positionLabels[position] || position} 已保存。`);
+      await loadAds();
+    } catch (error) {
+      setText(adsMessage, `保存广告位失败：${error.message}`);
+    }
+  });
+
+  loadPosts();
+  loadAds();
+</script>

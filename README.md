@@ -46,13 +46,25 @@ npm run preview
 openssl rand -base64 32
 ```
 
-后台登录地址：
+后台入口：
 
 ```text
 /login
 ```
 
-登录时输入的就是 Cloudflare 环境变量里的 `ADMIN_PASSWORD`。
+登录时输入的就是 Cloudflare 环境变量里的 `ADMIN_PASSWORD`。登录成功后会跳转到：
+
+```text
+/admin
+```
+
+`/admin` 当前提供轻量后台 UI，可以管理 D1 里的文章和广告位：
+
+- 新建文章；
+- 编辑文章标题、slug、状态和 Markdown 正文；
+- 发布/隐藏文章；
+- 删除文章；
+- 编辑并启用/关闭广告位。
 
 ## D1 数据库绑定
 
@@ -148,10 +160,62 @@ drizzle/
 - `/posts/`：文章列表
 - `/posts/:slug`：文章详情
 - `/login`：后台登录页
+- `/admin`：后台管理页
 - `/api/posts`：文章 API
 - `/api/ads`：广告位 API
 
 后台登录后调用受保护 API。公开可访问的是已发布文章和已启用广告位。
+
+### API 不是普通页面
+
+`/api/ads` 和 `/api/posts` 是接口地址，不是给访客看的页面。直接在浏览器里打开它们，看到 JSON 或错误信息是正常的。
+
+### 文章 API
+
+AI、脚本或自动化工具可以通过 `/api/posts` 发布文章，但必须先登录拿到 session cookie。
+
+推荐流程：
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "password": "你的 ADMIN_PASSWORD"
+}
+```
+
+登录成功后，保存响应里的 cookie，再创建文章：
+
+```http
+POST /api/posts
+Content-Type: application/json
+Cookie: session=登录接口返回的 session cookie
+
+{
+  "title": "文章标题",
+  "slug": "article-slug",
+  "status": "hidden",
+  "content": "# Markdown 正文\n\n这里写文章内容。"
+}
+```
+
+字段说明：
+
+- `title`：文章标题，必填；
+- `slug`：URL 路径，留空时后端会根据标题生成；
+- `status`：`hidden` 或 `published`，建议 AI 默认先发 `hidden`；
+- `content`：Markdown 正文，必填。
+
+文章接口速查：
+
+- `GET /api/posts?status=published&pageSize=20`：公开读取已发布文章；
+- `GET /api/posts/:slug`：公开读取单篇已发布文章；
+- `GET /api/posts?pageSize=50`：登录后读取全部文章；
+- `POST /api/posts`：登录后创建文章；
+- `PUT /api/posts/:id`：登录后更新文章；
+- `PATCH /api/posts/:id/status`：登录后发布或隐藏文章；
+- `DELETE /api/posts/:id`：登录后删除文章。
 
 ## 广告位
 
@@ -160,6 +224,16 @@ drizzle/
 ```text
 /api/ads
 ```
+
+`/api/ads` 不是 Google AdSense 必须要求的页面。它只是本站自己的广告位配置接口：后台把广告代码存进 D1，前台再从这个接口读取并渲染。
+
+如果暂时不放 Google 广告，可以不配置广告位。如果要放 AdSense：
+
+1. 到 Google AdSense 后台创建广告单元；
+2. 复制 Google 给你的广告代码；
+3. 登录 `/admin`；
+4. 在右侧广告位中粘贴代码；
+5. 勾选启用并保存。
 
 当前支持的后端广告位包括：
 
