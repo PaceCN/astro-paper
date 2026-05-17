@@ -54,26 +54,22 @@ const content = sanitizeHtml(unsafeHtml, {
 >
   <Header />
   <BackButton />
-  <main id="main-content" class:list={["mx-auto grid w-full max-w-5xl gap-8 px-4 pb-12 md:grid-cols-[minmax(0,1fr)_220px]", { "mt-8": !SITE.showBackButton }]} data-pagefind-body>
-    <section class="min-w-0">
-      <h1 class="inline-block text-2xl font-bold text-accent sm:text-3xl">{post.title}</h1>
-      <div class="my-2 flex items-center gap-2">
-        <Datetime pubDatetime={pubDatetime} size="lg" />
-      </div>
-      <AdSlot slot="postTop" class="max-w-app" />
-      <article
-        id="article"
-        class="app-prose mt-8 w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
-        set:html={content}
-      />
-      <AdSlot slot="postBottom" class="max-w-app" />
-      <hr class="my-8 border-dashed" />
-      <BackToTopButton />
-      <ShareLinks />
-    </section>
-    <aside class="hidden md:block">
-      <AdSlot position="sidebar_top" />
-    </aside>
+  <main id="main-content" class:list={["app-layout pb-12", { "mt-8": !SITE.showBackButton }]} data-pagefind-body>
+    <h1 class="inline-block text-2xl font-bold text-accent sm:text-3xl">{post.title}</h1>
+    <div class="my-2 flex items-center gap-2">
+      <Datetime pubDatetime={pubDatetime} size="lg" />
+    </div>
+    <AdSlot position="sidebar_top" class="max-w-app" />
+    <AdSlot position="content_top" class="max-w-app" />
+    <article
+      id="article"
+      class="app-prose mt-8 w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
+      set:html={content}
+    />
+    <AdSlot position="content_bottom" class="max-w-app" />
+    <hr class="my-8 border-dashed" />
+    <BackToTopButton />
+    <ShareLinks />
   </main>
   <Footer />
 </Layout>

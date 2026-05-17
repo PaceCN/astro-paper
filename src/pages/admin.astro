@@ -13,11 +13,11 @@ const navItems = [
   ['docs', '说明'],
 ] as const;
 const adSlots = [
-  ['header_bottom', '页头下方'],
-  ['sidebar_top', '侧边栏顶部'],
-  ['content_top', '正文上方'],
-  ['content_bottom', '正文下方'],
-  ['footer_top', '页脚上方'],
+  ['header_bottom', '首页最新文章上方'],
+  ['footer_top', '首页最新文章下方'],
+  ['sidebar_top', '文章页竖版广告'],
+  ['content_top', '文章页正文上方'],
+  ['content_bottom', '文章页正文下方'],
 ] as const;
 ---
 
@@ -103,7 +103,7 @@ const adSlots = [
         {tab === 'ads' && (
           <section class="rounded border border-border p-4">
             <h2 class="text-xl font-semibold">广告管理</h2>
-            <p class="mt-2 text-sm text-muted-foreground">填入 Google AdSense 等广告代码并启用后，前台对应位置会显示。不放广告时可以留空。</p>
+            <p class="mt-2 text-sm text-muted-foreground">首页只使用“首页最新文章上方/下方”；文章详情页使用“文章页竖版广告/正文上方/正文下方”。不放广告时可以留空。</p>
             <div id="ads-list" class="mt-4 grid gap-4 md:grid-cols-2">
               {adSlots.map(([position, label]) => (
                 <form class="rounded border border-border p-3" data-ad-form={position}>
@@ -130,7 +130,7 @@ const adSlots = [
             <div class="app-prose mt-4 max-w-none text-sm">
               <p><code>/api/ads</code> 和 <code>/api/posts</code> 是给后台、前台组件和自动化脚本调用的接口，不是普通页面。</p>
               <h3>/api/ads</h3>
-              <p>用于读取和保存广告位配置。它不是 Google AdSense 必须要求的页面，只是本站自己的广告管理接口。</p>
+              <p>用于读取和保存广告位配置。首页只展示首页广告位；文章详情页只展示文章页广告位，避免破坏原始居中阅读布局。</p>
               <pre><code>GET /api/ads</code></pre>
               <pre><code set:html={`PUT /api/ads/content_top
 Content-Type: application/json
