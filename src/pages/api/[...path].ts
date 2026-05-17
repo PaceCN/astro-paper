@@ -148,7 +148,14 @@ app.delete('/posts/:id', async (c) => {
 app.get('/ads', async (c) => {
   const db = getDb(c.env.DB);
   const data = await db.query.adSlots.findMany({ orderBy: (table) => sql`instr('header_bottom,sidebar_top,content_top,content_bottom,footer_top', ${table.position})` });
-  return ok(c, '获取广告位成功', { adSlots: data });
+  const byPosition = new Map(data.map((slot) => [slot.position, slot]));
+  const normalized = adPositions.map((position) => byPosition.get(position) ?? {
+    id: 0,
+    position,
+    adCode: '',
+    isEnabled: false
+  });
+  return ok(c, '获取广告位成功', { adSlots: normalized });
 });
 
 app.put('/ads/:position', async (c) => {
@@ -159,12 +166,11 @@ app.put('/ads/:position', async (c) => {
   const adCode = typeof body?.adCode === 'string' ? body.adCode : typeof body?.ad_code === 'string' ? body.ad_code : '';
   const isEnabled = Boolean(body?.isEnabled ?? body?.is_enabled);
   const db = getDb(c.env.DB);
-  const updated = await db
-    .update(adSlots)
-    .set({ adCode, isEnabled })
-    .where(eq(adSlots.position, position))
-    .returning();
-  return ok(c, '广告位更新成功', updated[0]);
+  const existing = await db.query.adSlots.findFirst({ where: eq(adSlots.position, position) });
+  const saved = existing
+    ? await db.update(adSlots).set({ adCode, isEnabled }).where(eq(adSlots.position, position)).returning()
+    : await db.insert(adSlots).values({ position, adCode, isEnabled }).returning();
+  return ok(c, '广告位更新成功', saved[0]);
 });
 
 export const ALL = async (context: APIContext) => {

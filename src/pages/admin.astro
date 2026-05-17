@@ -21,28 +21,18 @@ import { SITE } from '@/config';
     <section class="grid gap-6 py-8 lg:grid-cols-[180px_1fr]">
       <aside class="lg:sticky lg:top-4 lg:self-start">
         <nav class="grid gap-2 rounded border border-border p-2" aria-label="后台导航">
-          <button class="admin-nav rounded px-3 py-2 text-left text-accent bg-muted/60" type="button" data-panel-target="posts-panel">文章管理</button>
+          <button class="admin-nav rounded px-3 py-2 text-left text-accent bg-muted/60" type="button" data-panel-target="new-post-panel">新建文章</button>
+          <button class="admin-nav rounded px-3 py-2 text-left hover:text-accent" type="button" data-panel-target="posts-panel">文章管理</button>
           <button class="admin-nav rounded px-3 py-2 text-left hover:text-accent" type="button" data-panel-target="ads-panel">广告管理</button>
           <button class="admin-nav rounded px-3 py-2 text-left hover:text-accent" type="button" data-panel-target="docs-panel">说明</button>
         </nav>
       </aside>
 
       <div class="min-w-0">
-        <section id="posts-panel" class="admin-panel space-y-6">
-          <article class="rounded border border-border p-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 class="text-xl font-semibold">文章管理</h2>
-                <p class="text-sm text-muted-foreground">新建、编辑、发布、隐藏或删除文章。</p>
-              </div>
-              <button id="new-post-button" class="rounded bg-accent px-3 py-2 text-background" type="button">新建文章</button>
-            </div>
-            <p id="posts-message" class="mt-4 text-sm text-muted-foreground"></p>
-            <ul id="posts-list" class="mt-4 space-y-3"></ul>
-          </article>
-
+        <section id="new-post-panel" class="admin-panel space-y-6">
           <article class="rounded border border-border p-4">
             <h2 id="post-form-title" class="text-xl font-semibold">新建文章</h2>
+            <p class="mt-2 text-sm text-muted-foreground">默认保存为隐藏，检查无误后可在文章管理里发布。</p>
             <form id="post-form" class="mt-4 space-y-4">
               <input name="id" type="hidden" />
               <label class="block">
@@ -70,6 +60,20 @@ import { SITE } from '@/config';
               </div>
               <p id="post-form-message" class="text-sm text-muted-foreground"></p>
             </form>
+          </article>
+        </section>
+
+        <section id="posts-panel" class="admin-panel hidden space-y-6">
+          <article class="rounded border border-border p-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-xl font-semibold">文章管理</h2>
+                <p class="text-sm text-muted-foreground">编辑、发布、隐藏或删除文章。</p>
+              </div>
+              <button id="new-post-button" class="rounded bg-accent px-3 py-2 text-background" type="button">新建文章</button>
+            </div>
+            <p id="posts-message" class="mt-4 text-sm text-muted-foreground"></p>
+            <ul id="posts-list" class="mt-4 space-y-3"></ul>
           </article>
         </section>
 
@@ -272,10 +276,13 @@ Cookie: session=登录接口返回的 session cookie
     button.addEventListener('click', () => showPanel(button.dataset.panelTarget));
   });
 
-  const initialPanel = `${location.hash.replace('#', '') || 'posts'}-panel`;
-  showPanel(document.getElementById(initialPanel) ? initialPanel : 'posts-panel');
+  const initialPanel = `${location.hash.replace('#', '') || 'new-post'}-panel`;
+  showPanel(document.getElementById(initialPanel) ? initialPanel : 'new-post-panel');
 
-  document.querySelector('#new-post-button')?.addEventListener('click', resetPostForm);
+  document.querySelector('#new-post-button')?.addEventListener('click', () => {
+    resetPostForm();
+    showPanel('new-post-panel');
+  });
   document.querySelector('#reset-post-form')?.addEventListener('click', resetPostForm);
 
   document.querySelector('#logout-button')?.addEventListener('click', async () => {
@@ -304,7 +311,7 @@ Cookie: session=登录接口返回的 session cookie
       postForm.content.value = post.content;
       setText(postFormTitle, `编辑：${post.title}`);
       setText(postFormMessage, '');
-      showPanel('posts-panel');
+      showPanel('new-post-panel');
       postForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
