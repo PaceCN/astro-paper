@@ -149,11 +149,18 @@ app.get('/ads', async (c) => {
   const db = getDb(c.env.DB);
   const data = await db.query.adSlots.findMany({ orderBy: (table) => sql`instr('header_bottom,sidebar_top,content_top,content_bottom,footer_top', ${table.position})` });
   const byPosition = new Map(data.map((slot) => [slot.position, slot]));
-  const normalized = adPositions.map((position) => byPosition.get(position) ?? {
-    id: 0,
-    position,
-    adCode: '',
-    isEnabled: false
+  const normalized = adPositions.map((position) => {
+    const slot = byPosition.get(position);
+    const adCode = slot?.adCode ?? '';
+    const isEnabled = Boolean(slot?.isEnabled);
+    return {
+      id: slot?.id ?? 0,
+      position,
+      adCode,
+      ad_code: adCode,
+      isEnabled,
+      is_enabled: isEnabled
+    };
   });
   return ok(c, '获取广告位成功', { adSlots: normalized });
 });

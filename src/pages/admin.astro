@@ -290,8 +290,8 @@ Cookie: session=登录接口返回的 session cookie
         slots.forEach(slot => {
           const form = list?.querySelector(`[data-ad-form="${slot.position}"]`);
           if (!form) return;
-          form.adCode.value = slot.adCode || '';
-          form.isEnabled.checked = Boolean(slot.isEnabled);
+          form.adCode.value = slot.adCode ?? slot.ad_code ?? '';
+          form.isEnabled.checked = Boolean(slot.isEnabled ?? slot.is_enabled);
         });
         setText(message, `已读取 ${slots.length} 个广告位。`);
       } catch (error) {

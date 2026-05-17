@@ -33,11 +33,12 @@ try {
 
 <Layout>
   <Header />
-  <main id="main-content" data-layout="index" class="app-layout">
-    <AdSlot slot="homeAfterHero" class="max-w-app" />
+  <main id="main-content" data-layout="index" class="mx-auto grid w-full max-w-5xl gap-8 px-4 md:grid-cols-[minmax(0,1fr)_220px]">
+    <section class="min-w-0">
+      <AdSlot slot="homeAfterHero" class="max-w-app" />
 
-    <section id="recent-posts" class="pt-8 pb-6">
-      <h1 class="text-2xl font-semibold tracking-wide">最新文章</h1>
+      <section id="recent-posts" class="pt-8 pb-6">
+        <h1 class="text-2xl font-semibold tracking-wide">最新文章</h1>
       {posts.length ? (
         <ul>
           {posts.map(post => (
@@ -62,14 +63,18 @@ try {
       )}
     </section>
 
-    <AdSlot slot="homeAfterRecent" class="max-w-app" />
+      <AdSlot slot="homeAfterRecent" class="max-w-app" />
 
-    <div class="my-8 text-center">
-      <LinkButton href="/posts/">
-        全部文章
-        <IconArrowRight class="inline-block rtl:-rotate-180" />
-      </LinkButton>
-    </div>
+      <div class="my-8 text-center">
+        <LinkButton href="/posts/">
+          全部文章
+          <IconArrowRight class="inline-block rtl:-rotate-180" />
+        </LinkButton>
+      </div>
+    </section>
+    <aside class="hidden md:block">
+      <AdSlot position="sidebar_top" />
+    </aside>
   </main>
   <Footer />
 </Layout>

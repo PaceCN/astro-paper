@@ -5,8 +5,10 @@ type AstroPaperSlot = 'homeAfterHero' | 'homeAfterRecent' | 'postTop' | 'postMid
 type SlotName = AstroPaperSlot | AdPosition;
 type AdSlot = {
   position: AdPosition;
-  adCode: string;
-  isEnabled: boolean;
+  adCode?: string;
+  ad_code?: string;
+  isEnabled?: boolean;
+  is_enabled?: boolean;
 };
 
 type Props = {
@@ -35,8 +37,18 @@ try {
 } catch {
   adSlot = undefined;
 }
+
+const adCode = (adSlot?.adCode ?? adSlot?.ad_code ?? '').trim();
+const isEnabled = Boolean(adSlot?.isEnabled ?? adSlot?.is_enabled);
+const isImageUrl = /^https?:\/\/[^\s<>]+\.(png|jpe?g|gif|webp|svg)(\?[^\s<>]*)?$/i.test(adCode);
 ---
 
-{adSlot?.isEnabled && adSlot.adCode ? (
-  <aside class:list={["my-8 text-center text-sm text-muted-foreground", className]} data-ad-position={adPosition} set:html={adSlot.adCode} />
+{isEnabled && adCode ? (
+  <aside class:list={["my-8 text-center text-sm text-muted-foreground", className]} data-ad-position={adPosition}>
+    {isImageUrl ? (
+      <img src={adCode} alt="广告" class="mx-auto max-h-80 max-w-full rounded border border-border object-contain" loading="lazy" />
+    ) : (
+      <Fragment set:html={adCode} />
+    )}
+  </aside>
 ) : null}
