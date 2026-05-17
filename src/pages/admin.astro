@@ -81,8 +81,29 @@ import { SITE } from '@/config';
           <article class="rounded border border-border p-4">
             <h2 class="text-xl font-semibold">广告管理</h2>
             <p class="mt-2 text-sm text-muted-foreground">填入 Google AdSense 等广告代码并启用后，前台对应位置会显示。不放广告时可以留空。</p>
-            <div id="ads-list" class="mt-4 grid gap-4 md:grid-cols-2"></div>
-            <p id="ads-message" class="mt-4 text-sm text-muted-foreground"></p>
+            <div id="ads-list" class="mt-4 grid gap-4 md:grid-cols-2">
+              {[
+                ['header_bottom', '页头下方'],
+                ['sidebar_top', '侧边栏顶部'],
+                ['content_top', '正文上方'],
+                ['content_bottom', '正文下方'],
+                ['footer_top', '页脚上方'],
+              ].map(([position, label]) => (
+                <form class="rounded border border-border p-3" data-ad-form={position}>
+                  <h3 class="font-semibold">{label}</h3>
+                  <label class="mt-3 flex items-center gap-2 text-sm">
+                    <input name="isEnabled" type="checkbox" />
+                    启用
+                  </label>
+                  <label class="mt-3 block">
+                    <span class="mb-1 block text-sm text-muted-foreground">广告代码</span>
+                    <textarea name="adCode" class="min-h-28 w-full rounded border border-border bg-background px-3 py-2 font-mono text-xs"></textarea>
+                  </label>
+                  <button class="mt-3 rounded bg-accent px-3 py-2 text-sm text-background" type="submit">保存广告位</button>
+                </form>
+              ))}
+            </div>
+            <p id="ads-message" class="mt-4 text-sm text-muted-foreground">广告位表单已载入。</p>
           </article>
         </section>
 
@@ -243,23 +264,15 @@ Cookie: session=登录接口返回的 session cookie
     try {
       const data = await api('ads');
       const slots = data.adSlots || [];
-      adsList.innerHTML = slots.map(slot => `
-        <form class="rounded border border-border p-3" data-ad-form="${slot.position}">
-          <h3 class="font-semibold">${positionLabels[slot.position] || slot.position}</h3>
-          <label class="mt-3 flex items-center gap-2 text-sm">
-            <input name="isEnabled" type="checkbox" ${slot.isEnabled ? 'checked' : ''} />
-            启用
-          </label>
-          <label class="mt-3 block">
-            <span class="mb-1 block text-sm text-muted-foreground">广告代码</span>
-            <textarea name="adCode" class="min-h-28 w-full rounded border border-border bg-background px-3 py-2 font-mono text-xs">${escapeHtml(slot.adCode || '')}</textarea>
-          </label>
-          <button class="mt-3 rounded bg-accent px-3 py-2 text-sm text-background" type="submit">保存广告位</button>
-        </form>
-      `).join('');
+      slots.forEach(slot => {
+        const form = adsList?.querySelector(`[data-ad-form="${slot.position}"]`);
+        if (!form) return;
+        form.adCode.value = slot.adCode || '';
+        form.isEnabled.checked = Boolean(slot.isEnabled);
+      });
       setText(adsMessage, `已读取 ${slots.length} 个广告位。`);
     } catch (error) {
-      setText(adsMessage, `读取广告位失败：${error.message}`);
+      setText(adsMessage, `读取广告位失败：${error.message}。仍可直接填写并保存广告位。`);
     }
   }
 
