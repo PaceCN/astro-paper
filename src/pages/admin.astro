@@ -95,6 +95,33 @@ const adSlots = [
               </div>
               <a class="rounded bg-accent px-3 py-2 text-background" href="/admin?tab=new">新建文章</a>
             </div>
+            <form id="edit-post-form" class="mt-4 hidden space-y-4 rounded border border-border p-3">
+              <input name="id" type="hidden" />
+              <h3 class="font-semibold">编辑文章</h3>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">标题</span>
+                <input name="title" class="w-full rounded border border-border bg-background px-3 py-2" required />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">Slug</span>
+                <input name="slug" class="w-full rounded border border-border bg-background px-3 py-2" required />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">状态</span>
+                <select name="status" class="w-full rounded border border-border bg-background px-3 py-2">
+                  <option value="hidden">隐藏</option>
+                  <option value="published">发布</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">正文 Markdown</span>
+                <textarea name="content" class="min-h-80 w-full rounded border border-border bg-background px-3 py-2 font-mono text-sm" required></textarea>
+              </label>
+              <div class="flex flex-wrap gap-3">
+                <button class="rounded bg-accent px-4 py-2 text-background" type="submit">保存修改</button>
+                <button id="cancel-edit-post" class="rounded border border-border px-4 py-2" type="button">取消编辑</button>
+              </div>
+            </form>
             <p id="posts-message" class="mt-4 text-sm text-muted-foreground">正在读取文章...</p>
             <ul id="posts-list" class="mt-4 space-y-3"></ul>
           </section>
@@ -238,10 +265,34 @@ Cookie: session=登录接口返回的 session cookie
   if (tab === 'posts') {
     const list = document.querySelector('#posts-list');
     const message = document.querySelector('#posts-message');
+    const editForm = document.querySelector('#edit-post-form');
+    let currentPosts = [];
+
+    function editField(name) {
+      return editForm?.querySelector(`[name="${name}"]`);
+    }
+
+    function closeEditForm() {
+      editForm?.reset();
+      editForm?.classList.add('hidden');
+    }
+
+    function openEditForm(post) {
+      editField('id').value = post.id;
+      editField('title').value = post.title;
+      editField('slug').value = post.slug;
+      editField('status').value = post.status;
+      editField('content').value = post.content;
+      editForm.classList.remove('hidden');
+      editForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      editField('title').focus();
+    }
+
     async function loadPosts() {
       try {
         const data = await api('posts?pageSize=50');
         const posts = data.posts || [];
+        currentPosts = posts;
         list.innerHTML = posts.length ? posts.map(post => `
           <li class="rounded border border-border p-3">
             <div class="flex flex-wrap items-start justify-between gap-3">
@@ -251,6 +302,7 @@ Cookie: session=登录接口返回的 session cookie
                 <p class="mt-2 text-sm">${escapeHtml(excerpt(post.content))}</p>
               </div>
               <div class="flex flex-wrap gap-2 text-sm">
+                <button class="rounded border border-border px-2 py-1" data-edit="${post.id}" type="button">编辑</button>
                 <button class="rounded border border-border px-2 py-1" data-toggle="${post.id}" data-status="${post.status === 'published' ? 'hidden' : 'published'}" type="button">${post.status === 'published' ? '隐藏' : '发布'}</button>
                 <button class="rounded border border-border px-2 py-1 text-red-500" data-delete="${post.id}" type="button">删除</button>
               </div>
@@ -266,8 +318,13 @@ Cookie: session=登录接口返回的 session cookie
     list?.addEventListener('click', async event => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
+      const editId = target.dataset.edit;
       const toggleId = target.dataset.toggle;
       const deleteId = target.dataset.delete;
+      if (editId) {
+        const post = currentPosts.find(item => String(item.id) === editId);
+        if (post) openEditForm(post);
+      }
       if (toggleId) {
         await api(`posts/${toggleId}/status`, { method: 'PATCH', body: JSON.stringify({ status: target.dataset.status }) });
         await loadPosts();
@@ -277,6 +334,24 @@ Cookie: session=登录接口返回的 session cookie
         await loadPosts();
       }
     });
+    editForm?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const id = editField('id').value;
+      try {
+        setText(message, '正在保存修改...');
+        await api(`posts/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ title: editField('title').value, slug: editField('slug').value, content: editField('content').value }),
+        });
+        await api(`posts/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: editField('status').value }) });
+        closeEditForm();
+        await loadPosts();
+        setText(message, '文章修改已保存。');
+      } catch (error) {
+        setText(message, `保存失败：${error.message}`);
+      }
+    });
+    document.querySelector('#cancel-edit-post')?.addEventListener('click', closeEditForm);
     loadPosts();
   }
 

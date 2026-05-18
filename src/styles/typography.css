@@ -55,6 +55,10 @@
     @apply mx-auto border border-border;
   }
 
+  .app-prose video {
+    @apply mx-auto my-5 max-w-full rounded border border-border;
+  }
+
   .app-prose table {
     @apply w-full border-collapse text-left;
   }
