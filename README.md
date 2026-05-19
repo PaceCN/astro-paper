@@ -182,6 +182,11 @@ npm run db:remote
 
 ## 常见问题
 
+### 图片视频加载方式
+![图片信息](图片连接)
+
+[![点击观看视频](https://img.youtube.com/vi/视频ID/maxresdefault.jpg)](视频连接)
+
 ### 登录失败
 
 检查：
