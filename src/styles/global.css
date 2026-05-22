@@ -5,19 +5,29 @@
 
 :root,
 html[data-theme="light"] {
-  --background: #fdfdfd;
-  --foreground: #282728;
-  --accent: #006cac;
-  --muted: #e6e6e6;
-  --border: #ece9e9;
+  --background: #f7f8fb;
+  --foreground: #1f2937;
+  --accent: #2563eb;
+  --muted: #eef2f7;
+  --border: #dbe3ef;
+  --card: #ffffff;
+  --card-muted: #f8fafc;
+  --subtle: #64748b;
+  --ring: rgb(37 99 235 / 0.18);
+  --shadow: 0 18px 45px rgb(15 23 42 / 0.08);
 }
 
 html[data-theme="dark"] {
-  --background: #212737;
-  --foreground: #eaedf3;
-  --accent: #ff6b01;
-  --muted: #343f60;
-  --border: #ab4b08;
+  --background: #101827;
+  --foreground: #e5edf8;
+  --accent: #60a5fa;
+  --muted: #1d2a3d;
+  --border: #2c3c55;
+  --card: #152033;
+  --card-muted: #1a2840;
+  --subtle: #9fb0c7;
+  --ring: rgb(96 165 250 / 0.22);
+  --shadow: 0 18px 45px rgb(0 0 0 / 0.28);
 }
 
 @theme inline {
@@ -29,6 +39,9 @@ html[data-theme="dark"] {
   --color-accent: var(--accent);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-card: var(--card);
+  --color-card-muted: var(--card-muted);
+  --color-subtle: var(--subtle);
 }
 
 @layer base {
@@ -42,6 +55,7 @@ html[data-theme="dark"] {
   }
   body {
     @apply flex min-h-svh flex-col bg-background font-app text-foreground selection:bg-accent/75 selection:text-background;
+    background-image: radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 14%, transparent), transparent 34rem), radial-gradient(circle at top right, color-mix(in srgb, var(--muted) 70%, transparent), transparent 30rem);
   }
   a,
   button {
@@ -54,15 +68,42 @@ html[data-theme="dark"] {
 }
 
 @utility max-w-app {
-  @apply max-w-3xl;
+  @apply max-w-6xl;
 }
 
 @utility app-layout {
   @apply mx-auto w-full max-w-app px-4;
 }
 
+.surface-card {
+  @apply rounded-3xl border border-border bg-card shadow-[var(--shadow)];
+}
+
+.soft-card {
+  @apply rounded-2xl border border-border bg-card/90 transition duration-200 hover:-translate-y-0.5 hover:border-accent/45 hover:shadow-[var(--shadow)];
+}
+
+.chip {
+  @apply inline-flex items-center rounded-full border border-border bg-card-muted px-3 py-1 text-xs text-subtle transition hover:border-accent/50 hover:text-accent;
+}
+
+.fade-up {
+  animation: fade-up 0.45s ease both;
+}
+
 .active-nav {
-  @apply underline decoration-wavy decoration-2 underline-offset-8;
+  @apply rounded-full bg-accent/10 text-accent;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Source: https://piccalil.li/blog/a-more-modern-css-reset/ */

@@ -1,0 +1,46 @@
+---
+type Item = { name: string; count: number };
+type Props = { tags: Item[]; initialCount?: number };
+const { tags, initialCount = 14 } = Astro.props;
+---
+
+<section class="surface-card p-5">
+  <div class="mb-4 flex items-center justify-between gap-3">
+    <h3 class="font-semibold">标签</h3>
+    <span class="rounded-full bg-accent/10 px-2.5 py-1 text-xs text-accent">{tags.length}</span>
+  </div>
+  {tags.length ? (
+    <>
+      <div data-tag-cloud class="flex flex-wrap gap-2">
+        {tags.map((tag, index) => (
+          <a
+            href={`/posts/?tag=${encodeURIComponent(tag.name)}`}
+            class:list={['chip', { 'hidden tag-extra': index >= initialCount }]}
+            title={`${tag.name}（${tag.count} 篇）`}
+          >
+            {tag.name}<span class="ms-1 opacity-70">{tag.count}</span>
+          </a>
+        ))}
+      </div>
+      {tags.length > initialCount && (
+        <button data-tag-toggle class="mt-4 text-sm text-accent hover:underline" type="button">展开全部</button>
+      )}
+    </>
+  ) : (
+    <p class="text-sm text-subtle">标签会在文章补充后显示。</p>
+  )}
+</section>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    document.querySelectorAll('[data-tag-toggle]').forEach(button => {
+      button.addEventListener('click', () => {
+        const section = button.closest('section');
+        const extras = section?.querySelectorAll('.tag-extra') || [];
+        const expanding = [...extras].some(item => item.classList.contains('hidden'));
+        extras.forEach(item => item.classList.toggle('hidden', !expanding));
+        button.textContent = expanding ? '收起' : '展开全部';
+      });
+    });
+  });
+</script>

@@ -66,12 +66,30 @@ const adSlots = [
                 <span class="mb-1 block text-sm text-muted-foreground">Slug</span>
                 <input name="slug" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="留空时由标题生成" />
               </label>
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">状态</span>
+                  <select name="status" class="w-full rounded border border-border bg-background px-3 py-2">
+                    <option value="hidden">隐藏</option>
+                    <option value="published">发布</option>
+                  </select>
+                </label>
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">分类</span>
+                  <input name="category" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="随笔" />
+                </label>
+              </div>
               <label class="block">
-                <span class="mb-1 block text-sm text-muted-foreground">状态</span>
-                <select name="status" class="w-full rounded border border-border bg-background px-3 py-2">
-                  <option value="hidden">隐藏</option>
-                  <option value="published">发布</option>
-                </select>
+                <span class="mb-1 block text-sm text-muted-foreground">标签</span>
+                <input name="tags" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="用逗号分隔，例如 Cloudflare,VPS" />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">摘要</span>
+                <textarea name="description" class="min-h-24 w-full rounded border border-border bg-background px-3 py-2" placeholder="留空时由正文自动生成"></textarea>
+              </label>
+              <label class="flex items-center gap-2 text-sm text-muted-foreground">
+                <input name="featured" type="checkbox" />
+                推荐文章
               </label>
               <label class="block">
                 <span class="mb-1 block text-sm text-muted-foreground">正文 Markdown</span>
@@ -106,12 +124,30 @@ const adSlots = [
                 <span class="mb-1 block text-sm text-muted-foreground">Slug</span>
                 <input name="slug" class="w-full rounded border border-border bg-background px-3 py-2" required />
               </label>
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">状态</span>
+                  <select name="status" class="w-full rounded border border-border bg-background px-3 py-2">
+                    <option value="hidden">隐藏</option>
+                    <option value="published">发布</option>
+                  </select>
+                </label>
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">分类</span>
+                  <input name="category" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="随笔" />
+                </label>
+              </div>
               <label class="block">
-                <span class="mb-1 block text-sm text-muted-foreground">状态</span>
-                <select name="status" class="w-full rounded border border-border bg-background px-3 py-2">
-                  <option value="hidden">隐藏</option>
-                  <option value="published">发布</option>
-                </select>
+                <span class="mb-1 block text-sm text-muted-foreground">标签</span>
+                <input name="tags" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="用逗号分隔，例如 Cloudflare,VPS" />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">摘要</span>
+                <textarea name="description" class="min-h-24 w-full rounded border border-border bg-background px-3 py-2" placeholder="留空时由正文自动生成"></textarea>
+              </label>
+              <label class="flex items-center gap-2 text-sm text-muted-foreground">
+                <input name="featured" type="checkbox" />
+                推荐文章
               </label>
               <label class="block">
                 <span class="mb-1 block text-sm text-muted-foreground">正文 Markdown</span>
@@ -249,6 +285,10 @@ Cookie: session=登录接口返回的 session cookie
         title: form.title.value,
         slug: form.slug.value,
         status: form.status.value,
+        category: form.category.value,
+        tags: form.tags.value,
+        description: form.description.value,
+        featured: form.featured.checked,
         content: form.content.value,
       };
       try {
@@ -282,6 +322,10 @@ Cookie: session=登录接口返回的 session cookie
       editField('title').value = post.title;
       editField('slug').value = post.slug;
       editField('status').value = post.status;
+      editField('category').value = post.category || '随笔';
+      editField('tags').value = post.tags || '';
+      editField('description').value = post.description || '';
+      editField('featured').checked = Boolean(post.featured);
       editField('content').value = post.content;
       editForm.classList.remove('hidden');
       editForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -298,8 +342,8 @@ Cookie: session=登录接口返回的 session cookie
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h3 class="font-semibold">${escapeHtml(post.title)}</h3>
-                <p class="text-sm text-muted-foreground">/${escapeHtml(post.slug)} · ${post.status === 'published' ? '已发布' : '隐藏'}</p>
-                <p class="mt-2 text-sm">${escapeHtml(excerpt(post.content))}</p>
+                <p class="text-sm text-muted-foreground">/${escapeHtml(post.slug)} · ${post.status === 'published' ? '已发布' : '隐藏'} · ${escapeHtml(post.category || '随笔')} · ${Number(post.viewCount || 0)} 次阅读</p>
+                <p class="mt-2 text-sm">${escapeHtml(post.description || excerpt(post.content))}</p>
               </div>
               <div class="flex flex-wrap gap-2 text-sm">
                 <button class="rounded border border-border px-2 py-1" data-edit="${post.id}" type="button">编辑</button>
@@ -341,7 +385,15 @@ Cookie: session=登录接口返回的 session cookie
         setText(message, '正在保存修改...');
         await api(`posts/${id}`, {
           method: 'PUT',
-          body: JSON.stringify({ title: editField('title').value, slug: editField('slug').value, content: editField('content').value }),
+          body: JSON.stringify({
+            title: editField('title').value,
+            slug: editField('slug').value,
+            category: editField('category').value,
+            tags: editField('tags').value,
+            description: editField('description').value,
+            featured: editField('featured').checked,
+            content: editField('content').value,
+          }),
         });
         await api(`posts/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: editField('status').value }) });
         closeEditForm();

@@ -1,0 +1,27 @@
+---
+type Item = { name: string; count: number };
+type Props = { categories: Item[] };
+const { categories } = Astro.props;
+const total = categories.reduce((sum, item) => sum + item.count, 0) || 1;
+---
+
+<section class="surface-card p-5">
+  <h3 class="mb-4 font-semibold">分类</h3>
+  {categories.length ? (
+    <div class="space-y-3">
+      {categories.map(category => (
+        <a href={`/posts/?category=${encodeURIComponent(category.name)}`} class="block rounded-2xl bg-card-muted p-3 hover:text-accent">
+          <div class="mb-2 flex items-center justify-between gap-3 text-sm">
+            <span>{category.name}</span>
+            <span class="text-subtle">{category.count}</span>
+          </div>
+          <div class="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div class="h-full rounded-full bg-accent" style={`width: ${Math.max(8, Math.round(category.count / total * 100))}%`}></div>
+          </div>
+        </a>
+      ))}
+    </div>
+  ) : (
+    <p class="text-sm text-subtle">分类统计会在文章补充后显示。</p>
+  )}
+</section>

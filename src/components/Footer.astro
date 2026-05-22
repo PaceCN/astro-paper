@@ -1,6 +1,6 @@
 ---
 import type { HTMLAttributes } from "astro/types";
-import Socials from "./Socials.astro";
+import { SITE } from '@/config';
 
 const currentYear = new Date().getFullYear();
 
@@ -11,32 +11,8 @@ type Props = {
 const { noMarginTop = false, class: className, ...attrs } = Astro.props;
 ---
 
-<footer
-  class:list={["app-layout", { "mt-auto": !noMarginTop }, className]}
-  {...attrs}
->
-  <div
-    class:list={[
-      "py-6 sm:py-4",
-      "border-t border-border",
-      "flex flex-col items-center justify-between sm:flex-row-reverse",
-    ]}
-  >
-    <nav
-      aria-label="页脚导航"
-      class="mb-3 flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm sm:mb-0"
-    >
-      <a href="/about/" class="hover:text-accent">关于</a>
-      <a href="/privacy/" class="hover:text-accent">隐私</a>
-      <a href="/terms/" class="hover:text-accent">条款</a>
-      <a href="/contact/" class="hover:text-accent">联系</a>
-      <a href="/rss.xml" class="hover:text-accent">RSS Feed</a>
-    </nav>
-    <Socials />
-    <div class="my-2 flex flex-col items-center whitespace-nowrap sm:flex-row">
-      <span>Copyright &#169; {currentYear}</span>
-      <span class="hidden sm:inline">&nbsp;|&nbsp;</span>
-      <span>All rights reserved.</span>
-    </div>
+<footer class:list={["app-layout", { "mt-auto": !noMarginTop }, className]} {...attrs}>
+  <div class="mt-10 border-t border-border py-8 text-center text-sm text-subtle">
+    <p>© {currentYear} {SITE.title} · {SITE.author} · 热爱分享，记录技术与生活的点滴 · <a href="/rss.xml" class="text-accent hover:underline">RSS</a></p>
   </div>
 </footer>

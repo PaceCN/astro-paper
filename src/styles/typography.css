@@ -52,7 +52,7 @@
   }
 
   .app-prose img {
-    @apply mx-auto border border-border;
+    @apply mx-auto rounded-2xl border border-border shadow-[var(--shadow)];
   }
 
   .app-prose video {
@@ -73,7 +73,7 @@
   }
 
   .app-prose pre {
-    @apply overflow-x-auto rounded border border-border bg-muted/50 p-4 focus-visible:border-transparent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-dashed;
+    @apply overflow-x-auto rounded-2xl border border-border bg-muted/50 p-4 focus-visible:border-transparent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-dashed;
   }
 
   .app-prose pre code {
@@ -81,7 +81,7 @@
   }
 
   .app-prose blockquote {
-    @apply border-s-4 border-accent/80 ps-4 wrap-break-word opacity-80;
+    @apply rounded-2xl border-s-4 border-accent/80 bg-card-muted px-4 py-1 wrap-break-word opacity-90;
   }
 
   .astro-code {

@@ -2,6 +2,8 @@
 import { ClientRouter } from "astro:transitions";
 import { PUBLIC_GOOGLE_SITE_VERIFICATION } from "astro:env/client";
 import { SITE } from "@/config";
+import CookieConsent from "@/components/CookieConsent.astro";
+import VisitTracker from "@/components/VisitTracker.astro";
 import "@/styles/global.css";
 
 type Props = {
@@ -162,6 +164,8 @@ const structuredData = {
   </head>
   <body>
     <slot />
+    <CookieConsent />
+    <VisitTracker />
 
     <!-- Load full theme logic -->
     <script src="../scripts/theme.ts"></script>

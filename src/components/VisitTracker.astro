@@ -1,0 +1,14 @@
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const path = window.location.pathname;
+    const key = `visit:${path}:${new Date().toISOString().slice(0, 10)}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+    fetch('/api/visits', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path }),
+      keepalive: true,
+    }).catch(() => {});
+  });
+</script>

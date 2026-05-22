@@ -1,0 +1,96 @@
+---
+type Comment = {
+  id: number;
+  author: string;
+  content: string;
+  createdAt: string | number | Date;
+};
+
+type Props = { slug: string; comments: Comment[] };
+const { slug, comments } = Astro.props;
+---
+
+<section id="comments" class="mt-10 surface-card p-6">
+  <div class="mb-5 flex items-center justify-between gap-3">
+    <h2 class="text-xl font-semibold">评论区</h2>
+    <span id="comments-count" class="text-sm text-subtle">{comments.length} 条</span>
+  </div>
+  <div id="comments-list" class="space-y-4">
+    {comments.length ? comments.map(comment => (
+      <article class="rounded-2xl bg-card-muted p-4">
+        <div class="mb-2 flex items-center justify-between gap-3 text-sm">
+          <strong>{comment.author}</strong>
+          <time class="text-subtle" datetime={new Date(comment.createdAt).toISOString()}>{new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(comment.createdAt))}</time>
+        </div>
+        <p class="whitespace-pre-wrap text-sm leading-6 text-subtle">{comment.content}</p>
+      </article>
+    )) : <p class="text-sm text-subtle">还没有评论，欢迎留下第一条想法。</p>}
+  </div>
+  <form id="comment-form" data-slug={slug} class="mt-6 space-y-3 border-t border-border pt-5">
+    <div class="grid gap-3 md:grid-cols-2">
+      <label class="block">
+        <span class="mb-1 block text-sm text-subtle">昵称</span>
+        <input name="author" class="w-full rounded-2xl border border-border bg-background px-4 py-3" required maxlength="40" />
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-sm text-subtle">邮箱（不公开）</span>
+        <input name="email" type="email" class="w-full rounded-2xl border border-border bg-background px-4 py-3" maxlength="120" />
+      </label>
+    </div>
+    <label class="block">
+      <span class="mb-1 block text-sm text-subtle">评论</span>
+      <textarea name="content" class="min-h-28 w-full rounded-2xl border border-border bg-background px-4 py-3" required maxlength="1000"></textarea>
+    </label>
+    <div class="flex flex-wrap items-center gap-3">
+      <button class="rounded-full bg-accent px-5 py-2.5 text-sm text-background" type="submit">发布评论</button>
+      <p id="comment-message" class="text-sm text-subtle"></p>
+    </div>
+  </form>
+</section>
+
+<script>
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    const form = document.querySelector('#comment-form');
+    if (!form) return;
+    const message = document.querySelector('#comment-message');
+    const list = document.querySelector('#comments-list');
+    const count = document.querySelector('#comments-count');
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      const slug = form.dataset.slug;
+      const payload = {
+        author: form.author.value,
+        email: form.email.value,
+        content: form.content.value,
+      };
+      try {
+        if (message) message.textContent = '正在发布...';
+        const response = await fetch(`/api/posts/${slug}/comments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || '发布失败');
+        const comment = result.data.comment;
+        const date = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(comment.createdAt));
+        list?.insertAdjacentHTML('beforeend', `<article class="rounded-2xl bg-card-muted p-4"><div class="mb-2 flex items-center justify-between gap-3 text-sm"><strong>${escapeHtml(comment.author)}</strong><time class="text-subtle">${date}</time></div><p class="whitespace-pre-wrap text-sm leading-6 text-subtle">${escapeHtml(comment.content)}</p></article>`);
+        const nextCount = (Number(count?.textContent?.match(/\d+/)?.[0] || 0) + 1);
+        if (count) count.textContent = `${nextCount} 条`;
+        form.reset();
+        if (message) message.textContent = '评论已发布。';
+      } catch (error) {
+        if (message) message.textContent = `发布失败：${error.message}`;
+      }
+    });
+  });
+</script>

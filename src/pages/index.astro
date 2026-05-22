@@ -2,10 +2,9 @@
 import Layout from '@/layouts/Layout.astro';
 import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
-import Datetime from '@/components/Datetime.astro';
-import LinkButton from '@/components/LinkButton.astro';
+import PostCard from '@/components/PostCard.astro';
+import SiteSidebar from '@/components/SiteSidebar.astro';
 import AdSlot from '@/components/AdSlot.astro';
-import IconArrowRight from '@/assets/icons/IconArrowRight.svg';
 import { SITE } from '@/config';
 
 type Post = {
@@ -13,19 +12,33 @@ type Post = {
   title: string;
   slug: string;
   content: string;
+  description?: string;
+  tags?: string;
+  category?: string;
+  featured?: boolean;
+  viewCount?: number;
   createdAt: string | number;
 };
 
-let posts: Post[] = [];
+type Meta = {
+  totalPosts: number;
+  tags: { name: string; count: number }[];
+  categories: { name: string; count: number }[];
+  visits: { date: string; count: number }[];
+};
 
-function excerpt(content: string) {
-  return content.replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 160);
-}
+let posts: Post[] = [];
+let meta: Meta = { totalPosts: 0, tags: [], categories: [], visits: [] };
 
 try {
-  const response = await fetch(new URL(`/api/posts?status=published&pageSize=${SITE.postPerIndex}`, Astro.url));
-  const result = await response.json() as { success: boolean; data?: { posts: Post[] } };
-  posts = result.data?.posts ?? [];
+  const [postsResponse, metaResponse] = await Promise.all([
+    fetch(new URL(`/api/posts?status=published&pageSize=${SITE.postPerIndex}`, Astro.url)),
+    fetch(new URL('/api/meta', Astro.url)),
+  ]);
+  const postsResult = await postsResponse.json() as { success: boolean; data?: { posts: Post[] } };
+  const metaResult = await metaResponse.json() as { success: boolean; data?: Meta };
+  posts = postsResult.data?.posts ?? [];
+  meta = metaResult.data ?? meta;
 } catch {
   posts = [];
 }
@@ -33,50 +46,44 @@ try {
 
 <Layout>
   <Header />
-  <main id="main-content" data-layout="index" class="app-layout">
-    <AdSlot position="header_bottom" class="max-w-app" />
-
-    <section id="recent-posts" class="pt-8 pb-6">
-        <h1 class="text-2xl font-semibold tracking-wide">最新文章</h1>
-      {posts.length ? (
-        <ul>
-          {posts.map(post => (
-            <li class="my-6">
-              <a
-                href={`/posts/${post.slug}/`}
-                class:list={[
-                  "inline-block text-lg font-medium text-accent",
-                  "decoration-dashed underline-offset-4 hover:underline",
-                  "focus-visible:no-underline focus-visible:underline-offset-0",
-                ]}
-              >
-                <h2>{post.title}</h2>
-              </a>
-              <Datetime pubDatetime={new Date(post.createdAt)} />
-              <p>{excerpt(post.content)}{post.content.length > 160 ? '...' : ''}</p>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p class="mt-6 text-muted-foreground">还没有公开文章。等我整理好第一篇记录再放出来。</p>
-      )}
+  <main id="main-content" data-layout="index" class="app-layout pb-10">
+    <section class="fade-up surface-card mt-4 overflow-hidden p-8 sm:p-10">
+      <p class="mb-3 text-sm font-medium text-accent">让每一个普通人都能读懂这个世界</p>
+      <h1 class="max-w-3xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl">{SITE.title}</h1>
+      <p class="mt-5 max-w-3xl text-base leading-8 text-subtle sm:text-lg">{SITE.desc}</p>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a class="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-background" href="/archive/">浏览归档</a>
+        <a class="rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:text-accent" href="/about/">了解更多</a>
+      </div>
     </section>
 
-    <AdSlot position="footer_top" class="max-w-app" />
+    <AdSlot position="header_bottom" class="mt-6" />
 
-    <div class="my-8 text-center">
-      <LinkButton href="/posts/">
-        全部文章
-        <IconArrowRight class="inline-block rtl:-rotate-180" />
-      </LinkButton>
-    </div>
+    <section class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div class="min-w-0">
+        <div class="mb-5 flex items-center justify-between gap-3">
+          <h2 class="text-2xl font-semibold">最新文章</h2>
+          <a href="/archive/" class="text-sm text-accent hover:underline">全部文章</a>
+        </div>
+        {posts.length ? (
+          <div class="grid gap-5">
+            {posts.map(post => <PostCard post={post} />)}
+          </div>
+        ) : (
+          <p class="surface-card p-6 text-subtle">还没有公开文章。等我整理好第一篇记录再放出来。</p>
+        )}
+      </div>
+      <SiteSidebar meta={meta} />
+    </section>
+
+    <AdSlot position="footer_top" class="mt-8" />
   </main>
   <Footer />
 </Layout>
 
 <script>
-  document.addEventListener("astro:page-load", () => {
-    const indexLayout = (document.querySelector("#main-content") as HTMLElement)?.dataset?.layout;
-    if (indexLayout) sessionStorage.setItem("backUrl", "/");
+  document.addEventListener('astro:page-load', () => {
+    const indexLayout = (document.querySelector('#main-content') as HTMLElement)?.dataset?.layout;
+    if (indexLayout) sessionStorage.setItem('backUrl', '/');
   });
 </script>

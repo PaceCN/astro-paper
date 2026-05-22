@@ -1,0 +1,27 @@
+<div id="cookie-consent" class="fixed inset-x-4 bottom-4 z-50 hidden rounded-3xl border border-border bg-card/95 p-4 shadow-[var(--shadow)] backdrop-blur md:left-auto md:max-w-xl">
+  <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <p class="text-sm leading-6 text-subtle">
+      本站使用 Cookie 和本地存储保存主题、访问统计与评论体验。继续访问即表示你同意我们的
+      <a href="/privacy/" class="text-accent hover:underline">隐私政策</a>。
+    </p>
+    <div class="flex shrink-0 gap-2">
+      <button data-cookie-action="reject" class="rounded-full border border-border px-4 py-2 text-sm hover:text-accent" type="button">拒绝</button>
+      <button data-cookie-action="accept" class="rounded-full bg-accent px-4 py-2 text-sm text-background" type="button">接受</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const key = 'cookie-consent';
+    const banner = document.querySelector('#cookie-consent');
+    if (!banner || localStorage.getItem(key)) return;
+    banner.classList.remove('hidden');
+    banner.querySelectorAll('[data-cookie-action]').forEach(button => {
+      button.addEventListener('click', () => {
+        localStorage.setItem(key, button.getAttribute('data-cookie-action') || 'set');
+        banner.classList.add('hidden');
+      });
+    });
+  });
+</script>

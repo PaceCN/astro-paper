@@ -9,22 +9,50 @@ import AdSlot from '@/components/AdSlot.astro';
 import BackButton from '@/components/BackButton.astro';
 import BackToTopButton from '@/components/BackToTopButton.astro';
 import ShareLinks from '@/components/ShareLinks.astro';
+import RelatedPosts from '@/components/RelatedPosts.astro';
+import Comments from '@/components/Comments.astro';
 import { SITE } from '@/config';
 
 type Post = {
+  id: number;
   title: string;
   slug: string;
+  content: string;
+  description?: string;
+  tags?: string;
+  category?: string;
+  featured?: boolean;
+  viewCount?: number;
+  createdAt: string | number;
+  updatedAt?: string | number;
+};
+
+type Comment = {
+  id: number;
+  author: string;
   content: string;
   createdAt: string | number;
 };
 
 const { slug } = Astro.params;
 let post: Post | undefined;
+let related: Post[] = [];
+let comments: Comment[] = [];
 
 try {
   const response = await fetch(new URL(`/api/posts/${slug}`, Astro.url));
   const result = await response.json() as { success: boolean; data?: { post: Post } };
   post = result.data?.post;
+  if (post) {
+    const [relatedResponse, commentsResponse] = await Promise.all([
+      fetch(new URL(`/api/related/${post.slug}`, Astro.url)),
+      fetch(new URL(`/api/posts/${post.slug}/comments`, Astro.url)),
+    ]);
+    const relatedResult = await relatedResponse.json() as { success: boolean; data?: { posts: Post[] } };
+    const commentsResult = await commentsResponse.json() as { success: boolean; data?: { comments: Comment[] } };
+    related = relatedResult.data?.posts ?? [];
+    comments = commentsResult.data?.comments ?? [];
+  }
 } catch {
   post = undefined;
 }
@@ -32,6 +60,9 @@ try {
 if (!post) return Astro.redirect('/');
 
 const pubDatetime = new Date(post.createdAt);
+const modDatetime = post.updatedAt ? new Date(post.updatedAt) : null;
+const tags = String(post.tags || '').split(',').map(tag => tag.trim()).filter(Boolean);
+const description = post.description || post.content.replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 160);
 const unsafeHtml = await marked.parse(post.content);
 const content = sanitizeHtml(unsafeHtml, {
   allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'h3', 'h4', 'pre', 'code', 'video', 'source', 'track']),
@@ -51,28 +82,48 @@ const content = sanitizeHtml(unsafeHtml, {
 
 <Layout
   title={`${post.title} | ${SITE.title}`}
-  description={post.content.replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 160)}
+  description={description}
   pubDatetime={pubDatetime}
+  modDatetime={modDatetime}
   scrollSmooth={true}
 >
   <Header />
   <BackButton />
   <main id="main-content" class:list={["app-layout pb-12", { "mt-8": !SITE.showBackButton }]} data-pagefind-body>
-    <h1 class="inline-block text-2xl font-bold text-accent sm:text-3xl">{post.title}</h1>
-    <div class="my-2 flex items-center gap-2">
-      <Datetime pubDatetime={pubDatetime} size="lg" />
-    </div>
-    <AdSlot position="sidebar_top" class="max-w-app" />
-    <AdSlot position="content_top" class="max-w-app" />
+    <article class="surface-card mt-4 overflow-hidden p-6 sm:p-8">
+      <div class="mb-6 flex flex-wrap items-center gap-2 text-sm text-subtle">
+        <a class="chip border-accent/30 text-accent" href={`/archive/?category=${encodeURIComponent(post.category || '随笔')}`}>{post.category || '随笔'}</a>
+        {post.featured && <span class="chip">推荐</span>}
+        <span>{Number(post.viewCount || 0)} 次阅读</span>
+      </div>
+      <h1 class="max-w-4xl text-3xl font-bold leading-tight text-foreground sm:text-5xl">{post.title}</h1>
+      <div class="mt-5 flex flex-wrap items-center gap-4 text-subtle">
+        <Datetime pubDatetime={pubDatetime} modDatetime={modDatetime} size="lg" />
+      </div>
+      {tags.length > 0 && (
+        <div class="mt-5 flex flex-wrap gap-2">
+          {tags.map(tag => <a class="chip" href={`/archive/?tag=${encodeURIComponent(tag)}`}>#{tag}</a>)}
+        </div>
+      )}
+      {description && <p class="mt-6 max-w-3xl text-base leading-7 text-subtle">{description}</p>}
+    </article>
+
+    <AdSlot position="sidebar_top" class="mt-6" />
+    <AdSlot position="content_top" class="mt-6" />
+
     <article
       id="article"
-      class="app-prose mt-8 w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
+      class="app-prose surface-card mt-6 w-full p-6 sm:p-8 prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
       set:html={content}
     />
-    <AdSlot position="content_bottom" class="max-w-app" />
-    <hr class="my-8 border-dashed" />
-    <BackToTopButton />
-    <ShareLinks />
+
+    <AdSlot position="content_bottom" class="mt-6" />
+    <RelatedPosts posts={related} />
+    <Comments slug={post.slug} comments={comments} />
+    <div class="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
+      <BackToTopButton />
+      <ShareLinks />
+    </div>
   </main>
   <Footer />
 </Layout>
