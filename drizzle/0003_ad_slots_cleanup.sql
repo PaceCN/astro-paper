@@ -1,18 +1,8 @@
-CREATE TRIGGER IF NOT EXISTS posts_status_insert_check
-BEFORE INSERT ON posts
-FOR EACH ROW
-WHEN NEW.status NOT IN ('published', 'hidden')
-BEGIN
-  SELECT RAISE(ABORT, 'invalid post status');
-END;
+DROP TRIGGER IF EXISTS ad_slots_position_insert_check;
 --> statement-breakpoint
-CREATE TRIGGER IF NOT EXISTS posts_status_update_check
-BEFORE UPDATE OF status ON posts
-FOR EACH ROW
-WHEN NEW.status NOT IN ('published', 'hidden')
-BEGIN
-  SELECT RAISE(ABORT, 'invalid post status');
-END;
+DROP TRIGGER IF EXISTS ad_slots_position_update_check;
+--> statement-breakpoint
+DELETE FROM `ad_slots` WHERE `position` = 'sidebar_top';
 --> statement-breakpoint
 CREATE TRIGGER IF NOT EXISTS ad_slots_position_insert_check
 BEFORE INSERT ON ad_slots

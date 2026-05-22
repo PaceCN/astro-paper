@@ -31,16 +31,19 @@ let posts: Post[] = [];
 let meta: Meta = { totalPosts: 0, tags: [], categories: [], visits: [] };
 
 try {
-  const [postsResponse, metaResponse] = await Promise.all([
-    fetch(new URL(`/api/posts?status=published&pageSize=${SITE.postPerIndex}`, Astro.url)),
-    fetch(new URL('/api/meta', Astro.url)),
-  ]);
+  const postsResponse = await fetch(new URL(`/api/posts?status=published&pageSize=${SITE.postPerIndex}`, Astro.url));
   const postsResult = await postsResponse.json() as { success: boolean; data?: { posts: Post[] } };
-  const metaResult = await metaResponse.json() as { success: boolean; data?: Meta };
   posts = postsResult.data?.posts ?? [];
-  meta = metaResult.data ?? meta;
 } catch {
   posts = [];
+}
+
+try {
+  const metaResponse = await fetch(new URL('/api/meta', Astro.url));
+  const metaResult = await metaResponse.json() as { success: boolean; data?: Meta };
+  meta = metaResult.data ?? meta;
+} catch {
+  meta = { totalPosts: posts.length, tags: [], categories: [], visits: [] };
 }
 ---
 

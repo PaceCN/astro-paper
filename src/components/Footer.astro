@@ -13,6 +13,13 @@ const { noMarginTop = false, class: className, ...attrs } = Astro.props;
 
 <footer class:list={["app-layout", { "mt-auto": !noMarginTop }, className]} {...attrs}>
   <div class="mt-10 border-t border-border py-8 text-center text-sm text-subtle">
-    <p>© {currentYear} {SITE.title} · {SITE.author} · 热爱分享，记录技术与生活的点滴 · <a href="/rss.xml" class="text-accent hover:underline">RSS</a></p>
+    <nav aria-label="页脚导航" class="mb-3 flex flex-wrap justify-center gap-x-4 gap-y-2">
+      <a href="/about/" class="hover:text-accent">关于</a>
+      <a href="/privacy/" class="hover:text-accent">隐私政策</a>
+      <a href="/terms/" class="hover:text-accent">条款</a>
+      <a href="/contact/" class="hover:text-accent">联系我</a>
+      <a href="/rss.xml" class="hover:text-accent">RSS</a>
+    </nav>
+    <p>© {currentYear} {SITE.title} · {SITE.author} · 热爱分享，记录技术与生活的点滴</p>
   </div>
 </footer>

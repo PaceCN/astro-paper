@@ -1,6 +1,6 @@
 import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
-export const adPositions = ['header_bottom', 'sidebar_top', 'content_top', 'content_bottom', 'footer_top'] as const;
+export const adPositions = ['header_bottom', 'content_top', 'content_bottom', 'footer_top'] as const;
 export type AdPosition = (typeof adPositions)[number];
 
 export const commentStatuses = ['published', 'hidden'] as const;

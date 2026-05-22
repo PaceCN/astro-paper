@@ -11,6 +11,13 @@ export const SITE = {
   scheduledPostMargin: 15 * 60 * 1000,
   showArchives: false,
   showBackButton: true,
+  homeSidebar: {
+    profile: true,
+    visits: true,
+    tags: true,
+    categories: true,
+    stack: true,
+  },
   editPost: {
     enabled: false,
     text: "在 GitHub 编辑",

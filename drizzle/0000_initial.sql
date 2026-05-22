@@ -29,7 +29,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS `ad_slots_position_unique` ON `ad_slots` (`pos
 --> statement-breakpoint
 INSERT OR IGNORE INTO `ad_slots` (`position`, `ad_code`, `is_enabled`) VALUES
   ('header_bottom', '', 0),
-  ('sidebar_top', '', 0),
   ('content_top', '', 0),
   ('content_bottom', '', 0),
   ('footer_top', '', 0);

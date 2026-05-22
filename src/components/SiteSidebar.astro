@@ -13,34 +13,38 @@ type Meta = {
 
 type Props = { meta: Meta };
 const { meta } = Astro.props;
+const sidebar = SITE.homeSidebar;
 ---
 
 <aside class="space-y-5 lg:sticky lg:top-6 lg:self-start">
-  <section class="surface-card overflow-hidden p-5">
-    <div class="absolute"></div>
-    <div class="flex items-center gap-4">
-      <div class="flex size-14 items-center justify-center rounded-2xl bg-accent/10 text-xl font-semibold text-accent">{SITE.title.slice(0, 1)}</div>
-      <div>
-        <h3 class="font-semibold">{SITE.author}</h3>
-        <p class="text-sm text-subtle">{meta.totalPosts} 篇文章</p>
+  {sidebar.profile && (
+    <section class="surface-card overflow-hidden p-5">
+      <div class="flex items-center gap-4">
+        <div class="flex size-14 items-center justify-center rounded-2xl bg-accent/10 text-xl font-semibold text-accent">{SITE.title.slice(0, 1)}</div>
+        <div>
+          <h3 class="font-semibold">{SITE.author}</h3>
+          <p class="text-sm text-subtle">{meta.totalPosts} 篇文章</p>
+        </div>
       </div>
-    </div>
-    <p class="mt-4 text-sm leading-6 text-subtle">{SITE.desc}</p>
-    <div class="mt-4 flex flex-wrap gap-2">
-      <a class="chip" href={SITE.profile}>GitHub</a>
-      <a class="chip" href="/rss.xml">RSS</a>
-      <a class="chip" href="/about/">关于</a>
-    </div>
-  </section>
+      <p class="mt-4 text-sm leading-6 text-subtle">{SITE.desc}</p>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <a class="chip" href={SITE.profile}>GitHub</a>
+        <a class="chip" href="/rss.xml">RSS</a>
+        <a class="chip" href="/about/">关于</a>
+      </div>
+    </section>
+  )}
 
-  <TagCloud tags={meta.tags} />
-  <CategoryStats categories={meta.categories} />
-  <VisitTrend visits={meta.visits} />
+  {sidebar.visits && <VisitTrend visits={meta.visits} />}
+  {sidebar.tags && <TagCloud tags={meta.tags} />}
+  {sidebar.categories && <CategoryStats categories={meta.categories} />}
 
-  <section class="surface-card p-5">
-    <h3 class="mb-4 font-semibold">技术栈</h3>
-    <div class="flex flex-wrap gap-2">
-      {['Astro', 'Tailwind', 'Cloudflare', 'D1', 'Hono', 'Drizzle'].map(item => <span class="chip">{item}</span>)}
-    </div>
-  </section>
+  {sidebar.stack && (
+    <section class="surface-card p-5">
+      <h3 class="mb-4 font-semibold">技术栈</h3>
+      <div class="flex flex-wrap gap-2">
+        {['Astro', 'Tailwind', 'Cloudflare', 'D1', 'Hono', 'Drizzle'].map(item => <span class="chip">{item}</span>)}
+      </div>
+    </section>
+  )}
 </aside>

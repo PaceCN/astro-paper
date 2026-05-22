@@ -43,21 +43,27 @@ try {
   const response = await fetch(new URL(`/api/posts/${slug}`, Astro.url));
   const result = await response.json() as { success: boolean; data?: { post: Post } };
   post = result.data?.post;
-  if (post) {
-    const [relatedResponse, commentsResponse] = await Promise.all([
-      fetch(new URL(`/api/related/${post.slug}`, Astro.url)),
-      fetch(new URL(`/api/posts/${post.slug}/comments`, Astro.url)),
-    ]);
-    const relatedResult = await relatedResponse.json() as { success: boolean; data?: { posts: Post[] } };
-    const commentsResult = await commentsResponse.json() as { success: boolean; data?: { comments: Comment[] } };
-    related = relatedResult.data?.posts ?? [];
-    comments = commentsResult.data?.comments ?? [];
-  }
 } catch {
   post = undefined;
 }
 
 if (!post) return Astro.redirect('/');
+
+try {
+  const relatedResponse = await fetch(new URL(`/api/related/${post.slug}`, Astro.url));
+  const relatedResult = await relatedResponse.json() as { success: boolean; data?: { posts: Post[] } };
+  related = relatedResult.data?.posts ?? [];
+} catch {
+  related = [];
+}
+
+try {
+  const commentsResponse = await fetch(new URL(`/api/posts/${post.slug}/comments`, Astro.url));
+  const commentsResult = await commentsResponse.json() as { success: boolean; data?: { comments: Comment[] } };
+  comments = commentsResult.data?.comments ?? [];
+} catch {
+  comments = [];
+}
 
 const pubDatetime = new Date(post.createdAt);
 const modDatetime = post.updatedAt ? new Date(post.updatedAt) : null;
@@ -108,7 +114,6 @@ const content = sanitizeHtml(unsafeHtml, {
       {description && <p class="mt-6 max-w-3xl text-base leading-7 text-subtle">{description}</p>}
     </article>
 
-    <AdSlot position="sidebar_top" class="mt-6" />
     <AdSlot position="content_top" class="mt-6" />
 
     <article

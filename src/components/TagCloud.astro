@@ -14,7 +14,7 @@ const { tags, initialCount = 14 } = Astro.props;
       <div data-tag-cloud class="flex flex-wrap gap-2">
         {tags.map((tag, index) => (
           <a
-            href={`/posts/?tag=${encodeURIComponent(tag.name)}`}
+            href={`/archive/?tag=${encodeURIComponent(tag.name)}`}
             class:list={['chip', { 'hidden tag-extra': index >= initialCount }]}
             title={`${tag.name}（${tag.count} 篇）`}
           >
