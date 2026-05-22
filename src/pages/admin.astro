@@ -315,10 +315,17 @@ Cookie: session=登录接口返回的 session cookie
 <script define:vars={{ tab }}>
   async function api(path, options = {}) {
     const response = await fetch(`/api/${path}`, {
-      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
       ...options,
     });
-    const result = await response.json().catch(() => ({ success: false, message: '接口返回格式错误' }));
+    const text = await response.text();
+    let result;
+    try {
+      result = text ? JSON.parse(text) : { success: false, message: '接口返回为空' };
+    } catch {
+      throw new Error(`接口返回非 JSON（${response.status}）：${text.slice(0, 80) || response.statusText}`);
+    }
     if (!response.ok || !result.success) throw new Error(result.message || '请求失败');
     return result.data ?? result;
   }
@@ -371,6 +378,7 @@ Cookie: session=登录接口返回的 session cookie
 
     form?.addEventListener('submit', async event => {
       event.preventDefault();
+      event.stopPropagation();
       const payload = {
         site_title: form.site_title.value,
         site_author: form.site_author.value,
@@ -401,6 +409,7 @@ Cookie: session=登录接口返回的 session cookie
     });
     form?.addEventListener('submit', async event => {
       event.preventDefault();
+      event.stopPropagation();
       const payload = {
         title: form.title.value,
         slug: form.slug.value,
