@@ -1,9 +1,9 @@
 export const SITE = {
-  website: "https://astro-paper-18u.pages.dev/",
-  author: "wx",
+  website: "https://blog.728370.xyz/",
+  author: "Pace",
   profile: "https://github.com/PaceCN",
-  desc: "Pace Notes 是一个个人技术博客，记录 AI 工具、自动化、Cloudflare、VPS 和独立博客搭建中的真实尝试。",
-  title: "Pace Notes",
+  desc: "比朋友圈更长一点，比学术论文更有趣一点。",
+  title: "Pace的博客",
   ogImage: "favicon.svg",
   lightAndDarkMode: true,
   postPerIndex: 6,

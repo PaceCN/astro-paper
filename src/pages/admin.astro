@@ -294,12 +294,18 @@ Cookie: session=登录接口返回的 session cookie
   &quot;title&quot;: &quot;文章标题&quot;,
   &quot;slug&quot;: &quot;article-slug&quot;,
   &quot;status&quot;: &quot;hidden&quot;,
+  &quot;category&quot;: &quot;Cloudflare&quot;,
+  &quot;tags&quot;: &quot;Cloudflare,VPS,独立博客&quot;,
+  &quot;description&quot;: &quot;文章摘要，留空时会由正文自动生成。&quot;,
+  &quot;featured&quot;: false,
   &quot;content&quot;: &quot;# Markdown 正文\\n\\n这里写文章内容。&quot;
 }`} /></pre>
               <ul>
                 <li><code>GET /api/posts?status=published&amp;pageSize=20</code>：公开读取已发布文章。</li>
-                <li><code>POST /api/posts</code>：登录后创建文章。</li>
-                <li><code>PUT /api/posts/:id</code>：登录后更新文章。</li>
+                <li><code>GET /api/posts?status=published&amp;tag=Cloudflare</code>：按标签筛选文章。</li>
+                <li><code>GET /api/posts?status=published&amp;category=Cloudflare</code>：按分类筛选文章。</li>
+                <li><code>POST /api/posts</code>：登录后创建文章，支持 <code>category</code>、<code>tags</code>、<code>description</code>、<code>featured</code>。</li>
+                <li><code>PUT /api/posts/:id</code>：登录后更新文章，同样支持标签、分类、摘要和推荐字段。</li>
                 <li><code>PATCH /api/posts/:id/status</code>：登录后发布或隐藏文章。</li>
                 <li><code>DELETE /api/posts/:id</code>：登录后删除文章。</li>
               </ul>
