@@ -38,6 +38,8 @@ const { slug } = Astro.params;
 let post: Post | undefined;
 let related: Post[] = [];
 let comments: Comment[] = [];
+let commentsEnabled = true;
+let tagsEnabled = true;
 
 try {
   const response = await fetch(new URL(`/api/posts/${slug}`, Astro.url));
@@ -48,6 +50,16 @@ try {
 }
 
 if (!post) return Astro.redirect('/');
+
+try {
+  const settingsResponse = await fetch(new URL('/api/settings', Astro.url));
+  const settingsResult = await settingsResponse.json() as { success: boolean; data?: { settings: { commentsEnabled: boolean; tagsEnabled: boolean } } };
+  commentsEnabled = settingsResult.data?.settings.commentsEnabled ?? true;
+  tagsEnabled = settingsResult.data?.settings.tagsEnabled ?? true;
+} catch {
+  commentsEnabled = true;
+  tagsEnabled = true;
+}
 
 try {
   const relatedResponse = await fetch(new URL(`/api/related/${post.slug}`, Astro.url));
@@ -106,7 +118,7 @@ const content = sanitizeHtml(unsafeHtml, {
       <div class="mt-5 flex flex-wrap items-center gap-4 text-subtle">
         <Datetime pubDatetime={pubDatetime} modDatetime={modDatetime} size="lg" />
       </div>
-      {tags.length > 0 && (
+      {tagsEnabled && tags.length > 0 && (
         <div class="mt-5 flex flex-wrap gap-2">
           {tags.map(tag => <a class="chip" href={`/archive/?tag=${encodeURIComponent(tag)}`}>#{tag}</a>)}
         </div>
@@ -123,8 +135,8 @@ const content = sanitizeHtml(unsafeHtml, {
     />
 
     <AdSlot position="content_bottom" class="mt-6" />
-    <RelatedPosts posts={related} />
-    <Comments slug={post.slug} comments={comments} />
+    <RelatedPosts posts={related} tagsEnabled={tagsEnabled} />
+    <Comments slug={post.slug} comments={comments} enabled={commentsEnabled} />
     <div class="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
       <BackToTopButton />
       <ShareLinks />

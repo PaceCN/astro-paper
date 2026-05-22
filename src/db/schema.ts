@@ -3,7 +3,7 @@ import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core
 export const adPositions = ['header_bottom', 'content_top', 'content_bottom', 'footer_top'] as const;
 export type AdPosition = (typeof adPositions)[number];
 
-export const commentStatuses = ['published', 'hidden'] as const;
+export const commentStatuses = ['pending', 'published', 'hidden'] as const;
 export type CommentStatus = (typeof commentStatuses)[number];
 
 export const users = sqliteTable(
@@ -52,7 +52,7 @@ export const comments = sqliteTable('comments', {
   author: text('author').notNull(),
   email: text('email').notNull().default(''),
   content: text('content').notNull(),
-  status: text('status', { enum: commentStatuses }).notNull().default('published'),
+  status: text('status', { enum: commentStatuses }).notNull().default('pending'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date())
 });
 
@@ -65,4 +65,12 @@ export const siteVisits = sqliteTable(
     count: integer('count').notNull().default(0)
   },
   (table) => [uniqueIndex('site_visits_date_path_unique').on(table.date, table.path)]
+);
+
+export const siteSettings = sqliteTable(
+  'site_settings',
+  {
+    key: text('key').primaryKey(),
+    value: text('value').notNull().default('')
+  }
 );

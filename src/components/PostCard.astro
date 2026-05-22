@@ -17,9 +17,10 @@ type Post = {
 type Props = {
   post: Post;
   compact?: boolean;
+  tagsEnabled?: boolean;
 };
 
-const { post, compact = false } = Astro.props;
+const { post, compact = false, tagsEnabled = true } = Astro.props;
 const tags = String(post.tags || '').split(',').map(tag => tag.trim()).filter(Boolean).slice(0, compact ? 2 : 4);
 const description = post.description || String(post.content || '').replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 150);
 const date = post.createdAt ? new Date(post.createdAt) : new Date();
@@ -38,7 +39,7 @@ const date = post.createdAt ? new Date(post.createdAt) : new Date();
     {description && <p class:list={['text-subtle', compact ? 'line-clamp-2 text-sm' : 'line-clamp-3 text-sm leading-6']}>{description}</p>}
     <div class="flex flex-wrap items-center justify-between gap-3">
       <Datetime pubDatetime={date} class="text-subtle" />
-      {tags.length > 0 && (
+      {tagsEnabled && tags.length > 0 && (
         <div class="flex flex-wrap gap-2">
           {tags.map(tag => <span class="chip">#{tag}</span>)}
         </div>

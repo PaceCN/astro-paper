@@ -6,8 +6,8 @@ type Comment = {
   createdAt: string | number | Date;
 };
 
-type Props = { slug: string; comments: Comment[] };
-const { slug, comments } = Astro.props;
+type Props = { slug: string; comments: Comment[]; enabled?: boolean };
+const { slug, comments, enabled = true } = Astro.props;
 ---
 
 <section id="comments" class="mt-10 surface-card p-6">
@@ -26,6 +26,7 @@ const { slug, comments } = Astro.props;
       </article>
     )) : <p class="text-sm text-subtle">还没有评论，欢迎留下第一条想法。</p>}
   </div>
+  {enabled ? (
   <form id="comment-form" data-slug={slug} class="mt-6 space-y-3 border-t border-border pt-5">
     <div class="grid gap-3 md:grid-cols-2">
       <label class="block">
@@ -46,6 +47,9 @@ const { slug, comments } = Astro.props;
       <p id="comment-message" class="text-sm text-subtle"></p>
     </div>
   </form>
+  ) : (
+    <p class="mt-6 rounded-2xl bg-card-muted p-4 text-sm text-subtle">评论机制已关闭。</p>
+  )}
 </section>
 
 <script>
@@ -87,7 +91,7 @@ const { slug, comments } = Astro.props;
         const nextCount = (Number(count?.textContent?.match(/\d+/)?.[0] || 0) + 1);
         if (count) count.textContent = `${nextCount} 条`;
         form.reset();
-        if (message) message.textContent = '评论已发布。';
+        if (message) message.textContent = '评论已提交，审核通过后展示。';
       } catch (error) {
         if (message) message.textContent = `发布失败：${error.message}`;
       }

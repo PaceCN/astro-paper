@@ -55,7 +55,6 @@ const isActive = (path: string) => {
       >
         <li><a href="/" class:list={{ "active-nav": currentPath === "/" }}>首页</a></li>
         <li><a href="/archive/" class:list={{ "active-nav": isActive("/archive") || isActive("/posts") }}>归档</a></li>
-        <li><a href="/about/" class:list={{ "active-nav": isActive("/about") }}>关于</a></li>
         <li>
           <LinkButton href="/search" class:list={["focus-outline flex justify-center rounded-full px-4 py-2", { "active-nav [&>svg]:stroke-accent": isActive("/search") }]} title="搜索" aria-label="search">
             <IconSearch />

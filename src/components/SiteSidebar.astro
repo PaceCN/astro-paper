@@ -9,26 +9,40 @@ type Meta = {
   tags: { name: string; count: number }[];
   categories: { name: string; count: number }[];
   visits: { date: string; count: number }[];
+  settings?: {
+    tagsEnabled: boolean;
+    site: { title: string; desc: string; author: string; profile: string; avatar: string };
+    sidebar: { profile: boolean; visits: boolean; tags: boolean; categories: boolean; stack: boolean };
+    techStack: string[];
+  };
 };
 
 type Props = { meta: Meta };
 const { meta } = Astro.props;
-const sidebar = SITE.homeSidebar;
+const sidebar = meta.settings?.sidebar ?? SITE.homeSidebar;
+const site = meta.settings?.site;
+const title = site?.title || SITE.title;
+const author = site?.author || SITE.author;
+const desc = site?.desc || SITE.desc;
+const profile = site?.profile || SITE.profile;
+const avatar = site?.avatar || '';
+const tagsEnabled = meta.settings?.tagsEnabled ?? true;
+const techStack = meta.settings?.techStack?.length ? meta.settings.techStack : ['Astro', 'Tailwind', 'Cloudflare', 'D1', 'Hono', 'Drizzle'];
 ---
 
 <aside class="space-y-5 lg:sticky lg:top-6 lg:self-start">
   {sidebar.profile && (
     <section class="surface-card overflow-hidden p-5">
       <div class="flex items-center gap-4">
-        <div class="flex size-14 items-center justify-center rounded-2xl bg-accent/10 text-xl font-semibold text-accent">{SITE.title.slice(0, 1)}</div>
+        {avatar ? <img src={avatar} alt={author} class="size-14 rounded-2xl border border-border object-cover" /> : <div class="flex size-14 items-center justify-center rounded-2xl bg-accent/10 text-xl font-semibold text-accent">{title.slice(0, 1)}</div>}
         <div>
-          <h3 class="font-semibold">{SITE.author}</h3>
+          <h3 class="font-semibold">{author}</h3>
           <p class="text-sm text-subtle">{meta.totalPosts} 篇文章</p>
         </div>
       </div>
-      <p class="mt-4 text-sm leading-6 text-subtle">{SITE.desc}</p>
+      <p class="mt-4 text-sm leading-6 text-subtle">{desc}</p>
       <div class="mt-4 flex flex-wrap gap-2">
-        <a class="chip" href={SITE.profile}>GitHub</a>
+        <a class="chip" href={profile}>GitHub</a>
         <a class="chip" href="/rss.xml">RSS</a>
         <a class="chip" href="/about/">关于</a>
       </div>
@@ -36,14 +50,14 @@ const sidebar = SITE.homeSidebar;
   )}
 
   {sidebar.visits && <VisitTrend visits={meta.visits} />}
-  {sidebar.tags && <TagCloud tags={meta.tags} />}
+  {sidebar.tags && tagsEnabled && <TagCloud tags={meta.tags} />}
   {sidebar.categories && <CategoryStats categories={meta.categories} />}
 
   {sidebar.stack && (
     <section class="surface-card p-5">
       <h3 class="mb-4 font-semibold">技术栈</h3>
       <div class="flex flex-wrap gap-2">
-        {['Astro', 'Tailwind', 'Cloudflare', 'D1', 'Hono', 'Drizzle'].map(item => <span class="chip">{item}</span>)}
+        {techStack.map(item => <span class="chip">{item}</span>)}
       </div>
     </section>
   )}

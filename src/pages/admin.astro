@@ -5,10 +5,12 @@ import Footer from '@/components/Footer.astro';
 import { SITE } from '@/config';
 
 const rawTab = Astro.url.searchParams.get('tab') || 'new';
-const tab = ['new', 'posts', 'ads', 'docs'].includes(rawTab) ? rawTab : 'new';
+const tab = ['home', 'new', 'posts', 'comments', 'ads', 'docs'].includes(rawTab) ? rawTab : 'home';
 const navItems = [
+  ['home', '主页管理'],
   ['new', '新建文章'],
   ['posts', '文章管理'],
+  ['comments', '评论管理'],
   ['ads', '广告管理'],
   ['docs', '说明'],
 ] as const;
@@ -51,6 +53,58 @@ const adSlots = [
       </aside>
 
       <div class="min-w-0">
+        {tab === 'home' && (
+          <section class="rounded border border-border p-4">
+            <h2 class="text-xl font-semibold">主页管理</h2>
+            <p class="mt-2 text-sm text-muted-foreground">控制首页右侧模块、站点展示信息、标签总开关和技术栈内容。</p>
+            <form id="home-settings-form" class="mt-4 space-y-4">
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">站点标题</span>
+                  <input name="site_title" class="w-full rounded border border-border bg-background px-3 py-2" placeholder={SITE.title} />
+                </label>
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">作者名称</span>
+                  <input name="site_author" class="w-full rounded border border-border bg-background px-3 py-2" placeholder={SITE.author} />
+                </label>
+              </div>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">站点简介</span>
+                <textarea name="site_desc" class="min-h-24 w-full rounded border border-border bg-background px-3 py-2" placeholder={SITE.desc}></textarea>
+              </label>
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">个人主页 URL</span>
+                  <input name="site_profile" class="w-full rounded border border-border bg-background px-3 py-2" placeholder={SITE.profile} />
+                </label>
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">头像 URL</span>
+                  <input name="site_avatar" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="留空时显示首字母" />
+                </label>
+              </div>
+              <fieldset class="rounded border border-border p-3">
+                <legend class="px-1 text-sm text-muted-foreground">右侧模块显示</legend>
+                <div class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  <label class="flex items-center gap-2 text-sm"><input name="sidebar_profile" type="checkbox" /> 个人信息卡</label>
+                  <label class="flex items-center gap-2 text-sm"><input name="sidebar_visits" type="checkbox" /> 访问趋势</label>
+                  <label class="flex items-center gap-2 text-sm"><input name="sidebar_tags" type="checkbox" /> 标签</label>
+                  <label class="flex items-center gap-2 text-sm"><input name="sidebar_categories" type="checkbox" /> 分类</label>
+                  <label class="flex items-center gap-2 text-sm"><input name="sidebar_stack" type="checkbox" /> 技术栈</label>
+                  <label class="flex items-center gap-2 text-sm"><input name="tags_enabled" type="checkbox" /> 全站标签入口</label>
+                </div>
+              </fieldset>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">技术栈内容</span>
+                <textarea name="tech_stack" class="min-h-24 w-full rounded border border-border bg-background px-3 py-2" placeholder="Astro,Tailwind,Cloudflare,D1,Hono,Drizzle"></textarea>
+              </label>
+              <div class="flex flex-wrap gap-3">
+                <button class="rounded bg-accent px-4 py-2 text-background" type="submit">保存主页设置</button>
+              </div>
+              <p id="home-settings-message" class="text-sm text-muted-foreground">正在读取设置...</p>
+            </form>
+          </section>
+        )}
+
         {tab === 'new' && (
           <section class="rounded border border-border p-4">
             <h2 id="post-form-title" class="text-xl font-semibold">新建文章</h2>
@@ -162,10 +216,33 @@ const adSlots = [
           </section>
         )}
 
+        {tab === 'comments' && (
+          <section class="rounded border border-border p-4">
+            <h2 class="text-xl font-semibold">评论管理</h2>
+            <p class="mt-2 text-sm text-muted-foreground">评论默认进入待审核，审核通过后才会在文章页展示。</p>
+            <form id="comment-settings-form" class="mt-4 rounded border border-border p-3">
+              <label class="flex items-center gap-2 text-sm">
+                <input name="comments_enabled" type="checkbox" />
+                启用评论机制
+              </label>
+              <button class="mt-3 rounded bg-accent px-3 py-2 text-sm text-background" type="submit">保存评论开关</button>
+              <p id="comment-settings-message" class="mt-3 text-sm text-muted-foreground">正在读取评论设置...</p>
+            </form>
+            <div class="mt-5 flex flex-wrap gap-2 text-sm">
+              <button class="rounded border border-border px-3 py-2" data-comment-filter="pending" type="button">待审核</button>
+              <button class="rounded border border-border px-3 py-2" data-comment-filter="published" type="button">已发布</button>
+              <button class="rounded border border-border px-3 py-2" data-comment-filter="hidden" type="button">已隐藏</button>
+            </div>
+            <p id="comments-message" class="mt-4 text-sm text-muted-foreground">正在读取评论...</p>
+            <ul id="comments-list" class="mt-4 space-y-3"></ul>
+          </section>
+        )}
+
         {tab === 'ads' && (
           <section class="rounded border border-border p-4">
             <h2 class="text-xl font-semibold">广告管理</h2>
-            <p class="mt-2 text-sm text-muted-foreground">只保留首页顶部/底部、文章详情顶部/底部四个广告位。不放广告时可以留空。</p>
+            <p class="mt-2 text-sm text-muted-foreground">只保留首页顶部/底部、文章详情顶部/底部四个广告位。广告容器会限制宽度和高度，避免公告或广告代码撑破页面。</p>
+            <p class="mt-2 rounded border border-border bg-muted/40 p-3 text-sm text-muted-foreground">建议使用响应式 Google 广告代码或图片 URL；避免 fixed 定位、超宽 iframe、全屏弹窗等会破坏页面布局的代码。</p>
             <div id="ads-list" class="mt-4 grid gap-4 md:grid-cols-2">
               {adSlots.map(([position, label]) => (
                 <form class="rounded border border-border p-3" data-ad-form={position}>
@@ -270,6 +347,50 @@ Cookie: session=登录接口返回的 session cookie
       window.location.href = '/login';
     }
   });
+
+  if (tab === 'home') {
+    const form = document.querySelector('#home-settings-form');
+    const message = document.querySelector('#home-settings-message');
+    const checkboxNames = ['sidebar_profile', 'sidebar_visits', 'sidebar_tags', 'sidebar_categories', 'sidebar_stack', 'tags_enabled'];
+
+    async function loadHomeSettings() {
+      try {
+        const data = await api('settings');
+        const raw = data.raw || {};
+        ['site_title', 'site_author', 'site_desc', 'site_profile', 'site_avatar', 'tech_stack'].forEach(name => {
+          if (form?.[name]) form[name].value = raw[name] || '';
+        });
+        checkboxNames.forEach(name => {
+          if (form?.[name]) form[name].checked = raw[name] !== 'false';
+        });
+        setText(message, '设置已载入。');
+      } catch (error) {
+        setText(message, `读取设置失败：${error.message}`);
+      }
+    }
+
+    form?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const payload = {
+        site_title: form.site_title.value,
+        site_author: form.site_author.value,
+        site_desc: form.site_desc.value,
+        site_profile: form.site_profile.value,
+        site_avatar: form.site_avatar.value,
+        tech_stack: form.tech_stack.value,
+      };
+      checkboxNames.forEach(name => { payload[name] = form[name].checked; });
+      try {
+        setText(message, '正在保存...');
+        await api('settings', { method: 'PUT', body: JSON.stringify(payload) });
+        setText(message, '主页设置已保存。');
+      } catch (error) {
+        setText(message, `保存失败：${error.message}`);
+      }
+    });
+
+    loadHomeSettings();
+  }
 
   if (tab === 'new') {
     const form = document.querySelector('#post-form');
@@ -404,6 +525,87 @@ Cookie: session=登录接口返回的 session cookie
     });
     document.querySelector('#cancel-edit-post')?.addEventListener('click', closeEditForm);
     loadPosts();
+  }
+
+  if (tab === 'comments') {
+    const settingsForm = document.querySelector('#comment-settings-form');
+    const settingsMessage = document.querySelector('#comment-settings-message');
+    const list = document.querySelector('#comments-list');
+    const message = document.querySelector('#comments-message');
+    let currentFilter = 'pending';
+
+    async function loadCommentSettings() {
+      try {
+        const data = await api('settings');
+        settingsForm.comments_enabled.checked = data.raw?.comments_enabled !== 'false';
+        setText(settingsMessage, '评论设置已载入。');
+      } catch (error) {
+        setText(settingsMessage, `读取设置失败：${error.message}`);
+      }
+    }
+
+    async function loadComments() {
+      try {
+        const data = await api(`comments?status=${currentFilter}`);
+        const comments = data.comments || [];
+        list.innerHTML = comments.length ? comments.map(comment => `
+          <li class="rounded border border-border p-3">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 class="font-semibold">${escapeHtml(comment.author)}</h3>
+                <p class="text-sm text-muted-foreground">${escapeHtml(comment.status)} · ${new Date(comment.createdAt).toLocaleString('zh-CN')}</p>
+                <p class="mt-2 whitespace-pre-wrap text-sm">${escapeHtml(comment.content)}</p>
+              </div>
+              <div class="flex flex-wrap gap-2 text-sm">
+                <button class="rounded border border-border px-2 py-1" data-comment-status="published" data-comment-id="${comment.id}" type="button">通过</button>
+                <button class="rounded border border-border px-2 py-1" data-comment-status="hidden" data-comment-id="${comment.id}" type="button">隐藏</button>
+                <button class="rounded border border-border px-2 py-1 text-red-500" data-comment-delete="${comment.id}" type="button">删除</button>
+              </div>
+            </div>
+          </li>
+        `).join('') : '<li class="text-sm text-muted-foreground">当前没有评论。</li>';
+        setText(message, `已读取 ${comments.length} 条评论。`);
+      } catch (error) {
+        setText(message, `读取评论失败：${error.message}`);
+      }
+    }
+
+    settingsForm?.addEventListener('submit', async event => {
+      event.preventDefault();
+      try {
+        setText(settingsMessage, '正在保存...');
+        await api('settings', { method: 'PUT', body: JSON.stringify({ comments_enabled: settingsForm.comments_enabled.checked }) });
+        setText(settingsMessage, '评论开关已保存。');
+      } catch (error) {
+        setText(settingsMessage, `保存失败：${error.message}`);
+      }
+    });
+
+    document.querySelectorAll('[data-comment-filter]').forEach(button => {
+      button.addEventListener('click', async () => {
+        currentFilter = button.dataset.commentFilter;
+        await loadComments();
+      });
+    });
+
+    list?.addEventListener('click', async event => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const id = target.dataset.commentId;
+      const status = target.dataset.commentStatus;
+      const deleteId = target.dataset.commentDelete;
+      if (id && status) {
+        await api(`comments/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+        await loadComments();
+      }
+      if (deleteId && confirm('确定删除这条评论吗？')) {
+        await api(`comments/${deleteId}`, { method: 'DELETE' });
+        await loadComments();
+      }
+    });
+
+    loadCommentSettings();
+    loadComments();
   }
 
   if (tab === 'ads') {

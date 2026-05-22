@@ -44,11 +44,13 @@ const isImageUrl = /^https?:\/\/[^\s<>]+\.(png|jpe?g|gif|webp|svg)(\?[^\s<>]*)?$
 ---
 
 {isEnabled && adCode ? (
-  <aside class:list={["my-8 text-center text-sm text-muted-foreground", className]} data-ad-position={adPosition}>
-    {isImageUrl ? (
-      <img src={adCode} alt="广告" class="mx-auto max-h-80 max-w-full rounded border border-border object-contain" loading="lazy" />
-    ) : (
-      <Fragment set:html={adCode} />
-    )}
+  <aside class:list={["ad-slot my-8", className]} data-ad-position={adPosition} aria-label="广告">
+    <div class="ad-content">
+      {isImageUrl ? (
+        <img src={adCode} alt="广告" loading="lazy" />
+      ) : (
+        <Fragment set:html={adCode} />
+      )}
+    </div>
   </aside>
 ) : null}

@@ -13,8 +13,8 @@ type Post = {
   viewCount?: number;
 };
 
-type Props = { posts: Post[] };
-const { posts } = Astro.props;
+type Props = { posts: Post[]; tagsEnabled?: boolean };
+const { posts, tagsEnabled = true } = Astro.props;
 ---
 
 <section class="mt-10">
@@ -24,7 +24,7 @@ const { posts } = Astro.props;
   </div>
   {posts.length ? (
     <div class="grid gap-4 md:grid-cols-3">
-      {posts.map(post => <PostCard post={post} compact />)}
+      {posts.map(post => <PostCard post={post} compact tagsEnabled={tagsEnabled} />)}
     </div>
   ) : (
     <p class="surface-card p-5 text-sm text-subtle">相关文章会在内容增多后显示。</p>

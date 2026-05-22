@@ -5,7 +5,11 @@ type Post = {
   title: string;
   slug: string;
   content: string;
+  description?: string;
+  category?: string;
+  tags?: string;
   createdAt: string | number;
+  updatedAt?: string | number;
 };
 
 function escapeXml(value: string) {
@@ -17,13 +21,14 @@ function escapeXml(value: string) {
     .replaceAll("'", '&apos;');
 }
 
-function excerpt(content: string) {
-  return content.replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 180);
+function excerpt(post: Post) {
+  return (post.description || post.content.replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim()).slice(0, 220);
 }
 
-export const GET: APIRoute = async ({ url, site }) => {
+export const GET: APIRoute = async ({ url }) => {
   let posts: Post[] = [];
-  const siteUrl = site?.href ?? SITE.website;
+  const siteUrl = SITE.website || url.origin;
+  const channelUrl = new URL('/rss.xml', siteUrl).href;
 
   try {
     const response = await fetch(new URL('/api/posts?status=published&pageSize=50', url));
@@ -33,21 +38,30 @@ export const GET: APIRoute = async ({ url, site }) => {
     posts = [];
   }
 
-  const items = posts.map(post => `
+  const items = posts.map(post => {
+    const link = new URL(`/posts/${post.slug}/`, siteUrl).href;
+    const categories = [post.category, ...(post.tags || '').split(',')].map(item => item?.trim()).filter(Boolean);
+    return `
     <item>
       <title>${escapeXml(post.title)}</title>
-      <link>${escapeXml(new URL(`/posts/${post.slug}/`, siteUrl).href)}</link>
-      <guid>${escapeXml(new URL(`/posts/${post.slug}/`, siteUrl).href)}</guid>
-      <description>${escapeXml(excerpt(post.content))}</description>
+      <link>${escapeXml(link)}</link>
+      <guid isPermaLink="true">${escapeXml(link)}</guid>
+      <description>${escapeXml(excerpt(post))}</description>
       <pubDate>${new Date(post.createdAt).toUTCString()}</pubDate>
-    </item>`).join('');
+      ${post.updatedAt ? `<lastBuildDate>${new Date(post.updatedAt).toUTCString()}</lastBuildDate>` : ''}
+      ${categories.map(category => `<category>${escapeXml(category)}</category>`).join('')}
+    </item>`;
+  }).join('');
 
-  return new Response(`<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0">
+  return new Response(`<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>${escapeXml(SITE.title)}</title>
     <description>${escapeXml(SITE.desc)}</description>
-    <link>${escapeXml(siteUrl)}</link>${items}
+    <link>${escapeXml(siteUrl)}</link>
+    <atom:link href="${escapeXml(channelUrl)}" rel="self" type="application/rss+xml" />
+    <language>${escapeXml(SITE.lang)}</language>
+    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>${items}
   </channel>
 </rss>`, {
     headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' }

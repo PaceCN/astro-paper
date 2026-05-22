@@ -95,6 +95,24 @@ html[data-theme="dark"] {
   @apply rounded-full bg-accent/10 text-accent;
 }
 
+.ad-slot {
+  @apply mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-border bg-card/80 p-3 text-center text-sm text-subtle shadow-[var(--shadow)];
+}
+
+.ad-content {
+  @apply mx-auto flex max-h-[280px] min-h-16 max-w-full items-center justify-center overflow-hidden rounded-2xl bg-card-muted/60;
+}
+
+.ad-content :where(img, iframe, ins) {
+  max-width: 100% !important;
+  max-height: 260px !important;
+  margin-inline: auto !important;
+}
+
+.ad-content :where(script) {
+  display: none !important;
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;

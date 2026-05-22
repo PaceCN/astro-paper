@@ -2,7 +2,7 @@ import { env } from 'cloudflare:workers';
 import { and, desc, eq, like, ne, sql } from 'drizzle-orm';
 import { Hono, type Context } from 'hono';
 import type { APIContext } from 'astro';
-import { adPositions, adSlots, comments, posts, siteVisits, type AdPosition } from '../../db/schema';
+import { adPositions, adSlots, comments, posts, siteSettings, siteVisits, type AdPosition } from '../../db/schema';
 import { clearSessionCookie, createSession, getSessionCookie, sessionCookie, verifySession } from '../../lib/auth';
 import { getDb } from '../../lib/db';
 import { fail, ok } from '../../lib/response';
@@ -43,6 +43,53 @@ function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
+const defaultSettings = {
+  comments_enabled: 'true',
+  site_title: '',
+  site_desc: '',
+  site_author: '',
+  site_profile: '',
+  site_avatar: '',
+  sidebar_profile: 'true',
+  sidebar_visits: 'true',
+  sidebar_tags: 'true',
+  sidebar_categories: 'true',
+  sidebar_stack: 'true',
+  tags_enabled: 'true',
+  tech_stack: 'Astro,Tailwind,Cloudflare,D1,Hono,Drizzle'
+};
+
+async function getSettings(db: ReturnType<typeof getDb>) {
+  const rows = await db.query.siteSettings.findMany();
+  return { ...defaultSettings, ...Object.fromEntries(rows.map(row => [row.key, row.value])) };
+}
+
+function settingEnabled(settings: Record<string, string>, key: keyof typeof defaultSettings) {
+  return settings[key] !== 'false';
+}
+
+function publicSettings(settings: Record<string, string>) {
+  return {
+    commentsEnabled: settingEnabled(settings, 'comments_enabled'),
+    tagsEnabled: settingEnabled(settings, 'tags_enabled'),
+    site: {
+      title: settings.site_title,
+      desc: settings.site_desc,
+      author: settings.site_author,
+      profile: settings.site_profile,
+      avatar: settings.site_avatar,
+    },
+    sidebar: {
+      profile: settingEnabled(settings, 'sidebar_profile'),
+      visits: settingEnabled(settings, 'sidebar_visits'),
+      tags: settingEnabled(settings, 'sidebar_tags'),
+      categories: settingEnabled(settings, 'sidebar_categories'),
+      stack: settingEnabled(settings, 'sidebar_stack'),
+    },
+    techStack: settings.tech_stack.split(/[，,\n]/).map(item => item.trim()).filter(Boolean)
+  };
+}
+
 function lastDays(count: number) {
   const days: string[] = [];
   const now = new Date();
@@ -66,6 +113,7 @@ app.use('*', async (c, next) => {
   const isPublic =
     (c.req.method === 'POST' && c.req.path === '/api/auth/login') ||
     (c.req.method === 'GET' && c.req.path === '/api/ads') ||
+    (c.req.method === 'GET' && c.req.path === '/api/settings') ||
     (c.req.method === 'GET' && c.req.path === '/api/meta') ||
     (c.req.method === 'POST' && c.req.path === '/api/visits') ||
     (c.req.method === 'GET' && c.req.path.startsWith('/api/related/')) ||
@@ -140,11 +188,13 @@ app.post('/posts/:slug/comments', async (c) => {
   const content = String(body?.content ?? '').trim().slice(0, 1000);
   if (!author || !content) return fail(c, '昵称和评论内容不能为空', 400);
   const db = getDb(c.env.DB);
+  const settings = await getSettings(db);
+  if (!settingEnabled(settings, 'comments_enabled')) return fail(c, '评论已关闭', 403);
   const post = await db.query.posts.findFirst({ where: eq(posts.slug, c.req.param('slug')) });
   if (!post || post.status !== 'published') return fail(c, '文章不存在', 404);
-  const inserted = await db.insert(comments).values({ postId: post.id, author, email, content, status: 'published' }).returning();
+  const inserted = await db.insert(comments).values({ postId: post.id, author, email, content, status: 'pending' }).returning();
   const comment = inserted[0];
-  return ok(c, '评论发布成功', { comment: { id: comment.id, author: comment.author, content: comment.content, createdAt: comment.createdAt } }, 201);
+  return ok(c, '评论已提交，审核通过后展示', { comment: { id: comment.id, author: comment.author, content: comment.content, createdAt: comment.createdAt, status: comment.status } }, 201);
 });
 
 app.post('/posts', async (c) => {
@@ -213,8 +263,60 @@ app.delete('/posts/:id', async (c) => {
   return ok(c, '文章删除成功', deleted[0]);
 });
 
+app.get('/settings', async (c) => {
+  const db = getDb(c.env.DB);
+  const settings = await getSettings(db);
+  return ok(c, '获取站点设置成功', { settings: publicSettings(settings), raw: settings });
+});
+
+app.put('/settings', async (c) => {
+  const body = await readJson(c);
+  if (!body) return fail(c, '设置内容不能为空', 400);
+  const allowed = new Set(Object.keys(defaultSettings));
+  const entries = Object.entries(body).filter(([key]) => allowed.has(key));
+  const db = getDb(c.env.DB);
+  for (const [key, value] of entries) {
+    const normalized = typeof value === 'boolean' ? String(value) : String(value ?? '');
+    const existing = await db.query.siteSettings.findFirst({ where: eq(siteSettings.key, key) });
+    if (existing) await db.update(siteSettings).set({ value: normalized }).where(eq(siteSettings.key, key));
+    else await db.insert(siteSettings).values({ key, value: normalized });
+  }
+  const settings = await getSettings(db);
+  return ok(c, '站点设置已保存', { settings: publicSettings(settings), raw: settings });
+});
+
+app.get('/comments', async (c) => {
+  const status = c.req.query('status');
+  const db = getDb(c.env.DB);
+  const where = status === 'pending' || status === 'published' || status === 'hidden' ? eq(comments.status, status) : undefined;
+  const data = await db.query.comments.findMany({ where, orderBy: (table, { desc }) => desc(table.createdAt), limit: 100 });
+  return ok(c, '获取评论成功', { comments: data });
+});
+
+app.patch('/comments/:id/status', async (c) => {
+  const id = Number(c.req.param('id'));
+  const body = await readJson(c);
+  const status = body?.status;
+  if (!Number.isInteger(id) || id < 1) return fail(c, '评论 ID 无效', 400);
+  if (status !== 'pending' && status !== 'published' && status !== 'hidden') return fail(c, '评论状态无效', 400);
+  const db = getDb(c.env.DB);
+  const updated = await db.update(comments).set({ status }).where(eq(comments.id, id)).returning();
+  if (!updated.length) return fail(c, '评论不存在', 404);
+  return ok(c, '评论状态已更新', updated[0]);
+});
+
+app.delete('/comments/:id', async (c) => {
+  const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id) || id < 1) return fail(c, '评论 ID 无效', 400);
+  const db = getDb(c.env.DB);
+  const deleted = await db.delete(comments).where(eq(comments.id, id)).returning();
+  if (!deleted.length) return fail(c, '评论不存在', 404);
+  return ok(c, '评论已删除', deleted[0]);
+});
+
 app.get('/meta', async (c) => {
   const db = getDb(c.env.DB);
+  const settings = await getSettings(db);
   const publishedPosts = await db.query.posts.findMany({ where: eq(posts.status, 'published'), orderBy: (table, { desc }) => desc(table.createdAt), limit: 50 });
   const tagCounts = new Map<string, number>();
   const categoryCounts = new Map<string, number>();
@@ -232,7 +334,8 @@ app.get('/meta', async (c) => {
     totalPosts: publishedPosts.length,
     tags: [...tagCounts.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
     categories: [...categoryCounts.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
-    visits: days.map(date => ({ date, count: visitByDay.get(date) ?? 0 }))
+    visits: days.map(date => ({ date, count: visitByDay.get(date) ?? 0 })),
+    settings: publicSettings(settings)
   });
 });
 
@@ -281,7 +384,7 @@ app.get('/related/:slug', async (c) => {
 
 app.get('/ads', async (c) => {
   const db = getDb(c.env.DB);
-  const data = await db.query.adSlots.findMany({ orderBy: (table) => sql`instr('header_bottom,sidebar_top,content_top,content_bottom,footer_top', ${table.position})` });
+  const data = await db.query.adSlots.findMany({ orderBy: (table) => sql`instr('header_bottom,content_top,content_bottom,footer_top', ${table.position})` });
   const byPosition = new Map(data.map((slot) => [slot.position, slot]));
   const normalized = adPositions.map((position) => {
     const slot = byPosition.get(position);
