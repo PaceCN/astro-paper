@@ -28,7 +28,7 @@ export default defineConfig({
   },
   env: {
     schema: {
-      PUBLIC_GOOGLE_SITE_VERIFICATION: envField.string({
+      PUBLIC_GOOGLE_ADSENSE_ACCOUNT: envField.string({
         access: 'public',
         context: 'client',
         optional: true

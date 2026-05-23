@@ -69,7 +69,7 @@ npm run preview
 | --- | --- | --- |
 | `ADMIN_PASSWORD` | 是 | 后台登录密码 |
 | `JWT_SECRET` | 是 | 签发后台 session 的密钥 |
-| `PUBLIC_GOOGLE_SITE_VERIFICATION` | 否 | 站点验证字符串 |
+| `PUBLIC_GOOGLE_ADSENSE_ACCOUNT` | 否 | Google AdSense 账号，例如 `ca-pub-3317750744914675` |
 
 不要把真实密码、密钥或 Token 写进代码仓库。
 
