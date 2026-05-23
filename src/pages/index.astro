@@ -24,17 +24,16 @@ type Meta = {
   totalPosts: number;
   tags: { name: string; count: number }[];
   categories: { name: string; count: number }[];
-  visits: { date: string; count: number }[];
   settings?: {
     tagsEnabled: boolean;
     site: { title: string; desc: string; author: string; profile: string; avatar: string };
-    sidebar: { profile: boolean; visits: boolean; tags: boolean; categories: boolean; stack: boolean };
+    sidebar: { profile: boolean; tags: boolean; categories: boolean; stack: boolean };
     techStack: string[];
   };
 };
 
 let posts: Post[] = [];
-let meta: Meta = { totalPosts: 0, tags: [], categories: [], visits: [] };
+let meta: Meta = { totalPosts: 0, tags: [], categories: [] };
 
 try {
   const postsResponse = await fetch(new URL(`/api/posts?status=published&pageSize=${SITE.postPerIndex}`, Astro.url));
@@ -49,7 +48,7 @@ try {
   const metaResult = await metaResponse.json() as { success: boolean; data?: Meta };
   meta = metaResult.data ?? meta;
 } catch {
-  meta = { totalPosts: posts.length, tags: [], categories: [], visits: [] };
+  meta = { totalPosts: posts.length, tags: [], categories: [] };
 }
 ---
 

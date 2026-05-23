@@ -13,7 +13,6 @@ export const SITE = {
   showBackButton: true,
   homeSidebar: {
     profile: true,
-    visits: true,
     tags: true,
     categories: true,
     stack: true,

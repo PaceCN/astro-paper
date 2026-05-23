@@ -86,7 +86,6 @@ const adSlots = [
                 <legend class="px-1 text-sm text-muted-foreground">右侧模块显示</legend>
                 <div class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   <label class="flex items-center gap-2 text-sm"><input name="sidebar_profile" type="checkbox" /> 个人信息卡</label>
-                  <label class="flex items-center gap-2 text-sm"><input name="sidebar_visits" type="checkbox" /> 访问趋势</label>
                   <label class="flex items-center gap-2 text-sm"><input name="sidebar_tags" type="checkbox" /> 标签</label>
                   <label class="flex items-center gap-2 text-sm"><input name="sidebar_categories" type="checkbox" /> 分类</label>
                   <label class="flex items-center gap-2 text-sm"><input name="sidebar_stack" type="checkbox" /> 技术栈</label>
@@ -364,7 +363,7 @@ Cookie: session=登录接口返回的 session cookie
   if (tab === 'home') {
     const form = document.querySelector('#home-settings-form');
     const message = document.querySelector('#home-settings-message');
-    const checkboxNames = ['sidebar_profile', 'sidebar_visits', 'sidebar_tags', 'sidebar_categories', 'sidebar_stack', 'tags_enabled'];
+    const checkboxNames = ['sidebar_profile', 'sidebar_tags', 'sidebar_categories', 'sidebar_stack', 'tags_enabled'];
 
     async function loadHomeSettings() {
       try {

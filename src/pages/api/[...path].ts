@@ -2,7 +2,7 @@ import { env } from 'cloudflare:workers';
 import { and, desc, eq, like, ne, sql } from 'drizzle-orm';
 import { Hono, type Context } from 'hono';
 import type { APIContext } from 'astro';
-import { adPositions, adSlots, comments, posts, siteSettings, siteVisits, type AdPosition } from '../../db/schema';
+import { adPositions, adSlots, comments, posts, siteSettings, type AdPosition } from '../../db/schema';
 import { clearSessionCookie, createSession, getSessionCookie, sessionCookie, verifySession } from '../../lib/auth';
 import { getDb } from '../../lib/db';
 import { fail, ok } from '../../lib/response';
@@ -39,10 +39,6 @@ function plainText(value: string) {
   return value.replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim();
 }
 
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 const defaultSettings = {
   comments_enabled: 'true',
   site_title: '',
@@ -51,7 +47,6 @@ const defaultSettings = {
   site_profile: '',
   site_avatar: '',
   sidebar_profile: 'true',
-  sidebar_visits: 'true',
   sidebar_tags: 'true',
   sidebar_categories: 'true',
   sidebar_stack: 'true',
@@ -81,24 +76,12 @@ function publicSettings(settings: Record<string, string>) {
     },
     sidebar: {
       profile: settingEnabled(settings, 'sidebar_profile'),
-      visits: settingEnabled(settings, 'sidebar_visits'),
       tags: settingEnabled(settings, 'sidebar_tags'),
       categories: settingEnabled(settings, 'sidebar_categories'),
       stack: settingEnabled(settings, 'sidebar_stack'),
     },
     techStack: settings.tech_stack.split(/[，,\n]/).map(item => item.trim()).filter(Boolean)
   };
-}
-
-function lastDays(count: number) {
-  const days: string[] = [];
-  const now = new Date();
-  for (let index = count - 1; index >= 0; index -= 1) {
-    const date = new Date(now);
-    date.setUTCDate(now.getUTCDate() - index);
-    days.push(date.toISOString().slice(0, 10));
-  }
-  return days;
 }
 
 async function readJson(c: Context<{ Bindings: Bindings }>) {
@@ -115,7 +98,6 @@ app.use('*', async (c, next) => {
     (c.req.method === 'GET' && c.req.path === '/api/ads') ||
     (c.req.method === 'GET' && c.req.path === '/api/settings') ||
     (c.req.method === 'GET' && c.req.path === '/api/meta') ||
-    (c.req.method === 'POST' && c.req.path === '/api/visits') ||
     (c.req.method === 'GET' && c.req.path.startsWith('/api/related/')) ||
     (c.req.method === 'GET' && c.req.path === '/api/posts' && c.req.query('status') === 'published') ||
     (c.req.method === 'GET' && c.req.path.startsWith('/api/posts/')) ||
@@ -327,35 +309,12 @@ app.get('/meta', async (c) => {
       tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
     }
   }
-  const days = lastDays(14);
-  const rows = await db.query.siteVisits.findMany({ where: eq(siteVisits.path, '/'), orderBy: (table, { asc }) => asc(table.date), limit: 30 });
-  const visitByDay = new Map(rows.map(row => [row.date, row.count]));
   return ok(c, '获取站点统计成功', {
     totalPosts: publishedPosts.length,
     tags: [...tagCounts.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
     categories: [...categoryCounts.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
-    visits: days.map(date => ({ date, count: visitByDay.get(date) ?? 0 })),
     settings: publicSettings(settings)
   });
-});
-
-app.post('/visits', async (c) => {
-  const body = await readJson(c);
-  const path = String(body?.path ?? '/').trim().slice(0, 160) || '/';
-  const db = getDb(c.env.DB);
-  const date = todayKey();
-  const existing = await db.query.siteVisits.findFirst({ where: and(eq(siteVisits.date, date), eq(siteVisits.path, path)) });
-  if (existing) {
-    await db.update(siteVisits).set({ count: existing.count + 1 }).where(eq(siteVisits.id, existing.id));
-  } else {
-    await db.insert(siteVisits).values({ date, path, count: 1 });
-  }
-  if (path.startsWith('/posts/')) {
-    const slug = path.split('/').filter(Boolean)[1];
-    const post = slug ? await db.query.posts.findFirst({ where: eq(posts.slug, slug) }) : undefined;
-    if (post) await db.update(posts).set({ viewCount: post.viewCount + 1 }).where(eq(posts.id, post.id));
-  }
-  return ok(c, '访问已记录');
 });
 
 app.get('/related/:slug', async (c) => {
