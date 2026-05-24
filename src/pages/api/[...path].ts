@@ -114,7 +114,9 @@ app.post('/auth/login', async (c) => {
   const body = await readJson(c);
   const password = typeof body?.password === 'string' ? body.password : '';
   if (!password) return fail(c, '请输入后台密码', 400);
-  if (!c.env.ADMIN_PASSWORD || password !== c.env.ADMIN_PASSWORD) return fail(c, '后台密码错误', 401);
+  if (!c.env.ADMIN_PASSWORD) return fail(c, '后台环境变量 ADMIN_PASSWORD 未配置', 500);
+  if (!c.env.JWT_SECRET) return fail(c, '后台环境变量 JWT_SECRET 未配置', 500);
+  if (password !== c.env.ADMIN_PASSWORD) return fail(c, '后台密码错误', 401);
 
   const token = await createSession('admin', c.env.JWT_SECRET);
   c.header('Set-Cookie', sessionCookie(token));
