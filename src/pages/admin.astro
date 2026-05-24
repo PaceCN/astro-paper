@@ -1,8 +1,13 @@
 ---
+import { env } from 'cloudflare:workers';
 import Layout from '@/layouts/Layout.astro';
 import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
 import { SITE } from '@/config';
+import { getSessionCookie, verifySession } from '@/lib/auth';
+
+const username = await verifySession(getSessionCookie(Astro.request.headers.get('Cookie') ?? undefined), env.JWT_SECRET);
+if (!username) return Astro.redirect('/login');
 
 const rawTab = Astro.url.searchParams.get('tab') || 'new';
 const tab = ['home', 'new', 'posts', 'comments', 'ads', 'docs'].includes(rawTab) ? rawTab : 'home';
