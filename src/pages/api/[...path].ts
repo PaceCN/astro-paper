@@ -9,8 +9,9 @@ import { fail, ok } from '../../lib/response';
 
 type Bindings = {
   DB: D1Database;
-  JWT_SECRET: string;
   ADMIN_PASSWORD: string;
+  BACKEND_ENTRY: string;
+  AI_API_TOKEN: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>().basePath('/api');
@@ -52,7 +53,13 @@ const defaultSettings = {
   sidebar_categories: 'true',
   sidebar_stack: 'true',
   tags_enabled: 'true',
-  tech_stack: 'Astro,Tailwind,Cloudflare,D1,Hono,Drizzle'
+  tech_stack: 'Astro,Tailwind,Cloudflare,D1,Hono,Drizzle',
+  ai_can_create_post: 'true',
+  ai_can_publish_post: 'false',
+  ai_can_set_featured: 'false',
+  ai_can_set_category: 'true',
+  ai_can_set_tags: 'true',
+  ai_default_status: 'hidden'
 };
 
 async function getSettings(db: ReturnType<typeof getDb>) {
@@ -97,6 +104,7 @@ async function readJson(c: Context<{ Bindings: Bindings }>) {
 app.use('*', async (c, next) => {
   const isPublic =
     (c.req.method === 'POST' && c.req.path === '/api/auth/login') ||
+    (c.req.method === 'POST' && c.req.path.match(/^\/api\/[^/]+\/ai\/posts$/)) ||
     (c.req.method === 'GET' && c.req.path === '/api/ads') ||
     (c.req.method === 'GET' && c.req.path === '/api/settings') ||
     (c.req.method === 'GET' && c.req.path === '/api/meta') ||
@@ -107,7 +115,7 @@ app.use('*', async (c, next) => {
 
   if (isPublic) return next();
 
-  const username = await verifySession(getSessionCookie(c.req.header('Cookie')), c.env.JWT_SECRET);
+  const username = await verifySession(getSessionCookie(c.req.header('Cookie')), c.env.ADMIN_PASSWORD);
   if (!username) return fail(c, '未登录或会话已过期', 401);
   return next();
 });
@@ -117,10 +125,9 @@ app.post('/auth/login', async (c) => {
   const password = typeof body?.password === 'string' ? body.password : '';
   if (!password) return fail(c, '请输入后台密码', 400);
   if (!c.env.ADMIN_PASSWORD) return fail(c, '后台环境变量 ADMIN_PASSWORD 未配置', 500);
-  if (!c.env.JWT_SECRET) return fail(c, '后台环境变量 JWT_SECRET 未配置', 500);
   if (password !== c.env.ADMIN_PASSWORD) return fail(c, '后台密码错误', 401);
 
-  const token = await createSession('admin', c.env.JWT_SECRET);
+  const token = await createSession('admin', c.env.ADMIN_PASSWORD);
   c.header('Set-Cookie', sessionCookie(token));
   return ok(c, '登录成功');
 });
@@ -128,6 +135,14 @@ app.post('/auth/login', async (c) => {
 app.post('/auth/logout', (c) => {
   c.header('Set-Cookie', clearSessionCookie());
   return ok(c, '已退出登录');
+});
+
+app.post('/:backendEntry/ai/posts', async (c) => {
+  if (!c.env.BACKEND_ENTRY || c.req.param('backendEntry') !== c.env.BACKEND_ENTRY) return fail(c, '接口不存在', 404);
+  if (!c.env.AI_API_TOKEN) return fail(c, 'AI_API_TOKEN 未配置', 500);
+  const token = c.req.header('Authorization')?.replace(/^Bearer\s+/i, '').trim();
+  if (!token || token !== c.env.AI_API_TOKEN) return fail(c, 'AI token 无效', 401);
+  return createPost(c, { ai: true });
 });
 
 app.get('/posts', async (c) => {
@@ -183,23 +198,29 @@ app.post('/posts/:slug/comments', async (c) => {
   return ok(c, '评论已提交，审核通过后展示', { comment: { id: comment.id, author: comment.author, content: comment.content, createdAt: comment.createdAt, status: comment.status } }, 201);
 });
 
-app.post('/posts', async (c) => {
+async function createPost(c: Context<{ Bindings: Bindings }>, options: { ai?: boolean } = {}) {
   const body = await readJson(c);
   const title = typeof body?.title === 'string' ? body.title.trim() : '';
   const content = typeof body?.content === 'string' ? body.content : '';
   const requestedSlug = typeof body?.slug === 'string' ? body.slug.trim() : '';
-  const status = body?.status === 'published' ? 'published' : 'hidden';
+  const db = getDb(c.env.DB);
+  const settings = options.ai ? await getSettings(db) : null;
+  if (options.ai && !settingEnabled(settings!, 'ai_can_create_post')) return fail(c, 'AI 发文权限未开启', 403);
+
+  const requestedStatus = body?.status === 'published' ? 'published' : 'hidden';
+  const status = options.ai && !settingEnabled(settings!, 'ai_can_publish_post') ? settings!.ai_default_status === 'published' ? 'published' : 'hidden' : requestedStatus;
   const description = typeof body?.description === 'string' ? body.description.trim().slice(0, 220) : plainText(content).slice(0, 160);
-  const tags = normalizeList(body?.tags);
-  const category = String(body?.category ?? '随笔').trim().slice(0, 40) || '随笔';
-  const featured = Boolean(body?.featured);
+  const tags = options.ai && !settingEnabled(settings!, 'ai_can_set_tags') ? '' : normalizeList(body?.tags);
+  const category = options.ai && !settingEnabled(settings!, 'ai_can_set_category') ? '随笔' : String(body?.category ?? '随笔').trim().slice(0, 40) || '随笔';
+  const featured = options.ai && !settingEnabled(settings!, 'ai_can_set_featured') ? false : Boolean(body?.featured);
   const slug = slugify(requestedSlug || title);
   if (!title || !slug || !content) return fail(c, '标题、slug 和内容不能为空', 400);
 
-  const db = getDb(c.env.DB);
   const inserted = await db.insert(posts).values({ title, slug, content, description, tags, category, featured, status }).returning();
-  return ok(c, '文章创建成功', inserted[0], 201);
-});
+  return ok(c, options.ai ? 'AI 文章创建成功' : '文章创建成功', inserted[0], 201);
+}
+
+app.post('/posts', async (c) => createPost(c));
 
 app.put('/posts/:id', async (c) => {
   const id = Number(c.req.param('id'));

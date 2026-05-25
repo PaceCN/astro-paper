@@ -1,0 +1,85 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "Pace的博客" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=e6]:
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - link "首页" [ref=e9] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e10]:
+            - link "归档" [ref=e11] [cursor=pointer]:
+              - /url: /archive/
+          - listitem [ref=e12]:
+            - link "search" [ref=e13] [cursor=pointer]:
+              - /url: /search
+              - img [ref=e14]
+              - generic [ref=e18]: 搜索
+          - listitem [ref=e19]:
+            - button "light" [ref=e20] [cursor=pointer]:
+              - img [ref=e21]
+              - img
+  - main [ref=e24]:
+    - generic [ref=e25]:
+      - paragraph [ref=e26]: 站点后台
+      - heading "内容管理" [level=1] [ref=e27]
+      - paragraph [ref=e28]: 维护 D1 里的文章、广告位，并查看自动化接口说明。
+      - generic [ref=e29]:
+        - link "返回首页" [ref=e30] [cursor=pointer]:
+          - /url: /
+        - button "退出登录" [ref=e31] [cursor=pointer]
+    - generic [ref=e32]:
+      - complementary [ref=e33]:
+        - navigation "后台导航" [ref=e34]:
+          - link "主页管理" [ref=e35] [cursor=pointer]:
+            - /url: /admin?tab=home
+          - link "新建文章" [ref=e36] [cursor=pointer]:
+            - /url: /admin?tab=new
+          - link "文章管理" [ref=e37] [cursor=pointer]:
+            - /url: /admin?tab=posts
+          - link "评论管理" [ref=e38] [cursor=pointer]:
+            - /url: /admin?tab=comments
+          - link "广告管理" [ref=e39] [cursor=pointer]:
+            - /url: /admin?tab=ads
+          - link "说明" [ref=e40] [cursor=pointer]:
+            - /url: /admin?tab=docs
+      - generic [ref=e42]:
+        - heading "评论管理" [level=2] [ref=e43]
+        - paragraph [ref=e44]: 评论默认进入待审核，审核通过后才会在文章页展示。
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - checkbox "启用评论机制" [checked] [ref=e47]
+            - text: 启用评论机制
+          - button "保存评论开关" [ref=e48] [cursor=pointer]
+          - paragraph [ref=e49]: 评论设置已载入。
+        - generic [ref=e50]:
+          - button "待审核" [ref=e51] [cursor=pointer]
+          - button "已发布" [ref=e52] [cursor=pointer]
+          - button "已隐藏" [ref=e53] [cursor=pointer]
+        - paragraph [ref=e54]: 已读取 0 条评论。
+        - list [ref=e55]:
+          - listitem [ref=e56]: 当前没有评论。
+  - contentinfo [ref=e57]:
+    - generic [ref=e58]:
+      - navigation "页脚导航" [ref=e59]:
+        - link "关于" [ref=e60] [cursor=pointer]:
+          - /url: /about/
+        - link "隐私政策" [ref=e61] [cursor=pointer]:
+          - /url: /privacy/
+        - link "条款" [ref=e62] [cursor=pointer]:
+          - /url: /terms/
+        - link "联系我" [ref=e63] [cursor=pointer]:
+          - /url: /contact/
+      - paragraph [ref=e64]: © 2026 Pace的博客 · Pace · 热爱分享，记录技术与生活的点滴
+  - generic [ref=e66]:
+    - paragraph [ref=e67]:
+      - text: 本站使用 Cookie 和本地存储保存主题偏好与评论体验。继续访问即表示你同意我们的
+      - link "隐私政策" [ref=e68] [cursor=pointer]:
+        - /url: /privacy/
+      - text: 。
+    - generic [ref=e69]:
+      - button "拒绝" [ref=e70] [cursor=pointer]
+      - button "接受" [ref=e71] [cursor=pointer]

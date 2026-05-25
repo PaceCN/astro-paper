@@ -3,6 +3,7 @@
 
 interface Env {
   DB: D1Database;
-  JWT_SECRET: string;
   ADMIN_PASSWORD: string;
+  BACKEND_ENTRY: string;
+  AI_API_TOKEN: string;
 }

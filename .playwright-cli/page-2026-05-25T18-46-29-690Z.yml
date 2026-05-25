@@ -1,0 +1,111 @@
+- generic [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "Pace的博客" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=e6]:
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - link "首页" [ref=e9] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e10]:
+            - link "归档" [ref=e11] [cursor=pointer]:
+              - /url: /archive/
+          - listitem [ref=e12]:
+            - link "search" [ref=e13] [cursor=pointer]:
+              - /url: /search
+              - img [ref=e14]
+              - generic [ref=e18]: 搜索
+          - listitem [ref=e19]:
+            - button "light" [ref=e20] [cursor=pointer]:
+              - img [ref=e21]
+              - img
+  - main [ref=e24]:
+    - generic [ref=e25]:
+      - paragraph [ref=e26]: 站点后台
+      - heading "内容管理" [level=1] [ref=e27]
+      - paragraph [ref=e28]: 维护 D1 里的文章、广告位，并查看自动化接口说明。
+      - generic [ref=e29]:
+        - link "返回首页" [ref=e30] [cursor=pointer]:
+          - /url: /
+        - button "退出登录" [ref=e31] [cursor=pointer]
+    - generic [ref=e32]:
+      - complementary [ref=e33]:
+        - navigation "后台导航" [ref=e34]:
+          - link "主页管理" [ref=e35] [cursor=pointer]:
+            - /url: /admin?tab=home
+          - link "新建文章" [ref=e36] [cursor=pointer]:
+            - /url: /admin?tab=new
+          - link "文章管理" [ref=e37] [cursor=pointer]:
+            - /url: /admin?tab=posts
+          - link "评论管理" [ref=e38] [cursor=pointer]:
+            - /url: /admin?tab=comments
+          - link "广告管理" [ref=e39] [cursor=pointer]:
+            - /url: /admin?tab=ads
+          - link "说明" [ref=e40] [cursor=pointer]:
+            - /url: /admin?tab=docs
+      - generic [ref=e42]:
+        - heading "广告管理" [level=2] [ref=e43]
+        - paragraph [ref=e44]: 只保留首页顶部/底部、文章详情顶部/底部四个广告位。广告容器会限制宽度和高度，避免公告或广告代码撑破页面。
+        - paragraph [ref=e45]: 建议使用响应式 Google 广告代码或图片 URL；避免 fixed 定位、超宽 iframe、全屏弹窗等会破坏页面布局的代码。
+        - generic [ref=e46]:
+          - generic [ref=e47]:
+            - heading "首页顶部广告" [level=3] [ref=e48]
+            - generic [ref=e49]:
+              - checkbox "启用" [ref=e50]
+              - text: 启用
+            - generic [ref=e51]:
+              - generic [ref=e52]: 广告代码
+              - textbox "广告代码" [ref=e53]
+            - button "保存广告位" [active] [ref=e54] [cursor=pointer]
+          - generic [ref=e55]:
+            - heading "首页底部广告" [level=3] [ref=e56]
+            - generic [ref=e57]:
+              - checkbox "启用" [ref=e58]
+              - text: 启用
+            - generic [ref=e59]:
+              - generic [ref=e60]: 广告代码
+              - textbox "广告代码" [ref=e61]
+            - button "保存广告位" [ref=e62] [cursor=pointer]
+          - generic [ref=e63]:
+            - heading "文章详情顶部广告" [level=3] [ref=e64]
+            - generic [ref=e65]:
+              - checkbox "启用" [ref=e66]
+              - text: 启用
+            - generic [ref=e67]:
+              - generic [ref=e68]: 广告代码
+              - textbox "广告代码" [ref=e69]
+            - button "保存广告位" [ref=e70] [cursor=pointer]
+          - generic [ref=e71]:
+            - heading "文章详情底部广告" [level=3] [ref=e72]
+            - generic [ref=e73]:
+              - checkbox "启用" [ref=e74]
+              - text: 启用
+            - generic [ref=e75]:
+              - generic [ref=e76]: 广告代码
+              - textbox "广告代码" [ref=e77]
+            - button "保存广告位" [ref=e78] [cursor=pointer]
+        - paragraph [ref=e79]: 已读取 4 个广告位。
+  - contentinfo [ref=e80]:
+    - generic [ref=e81]:
+      - navigation "页脚导航" [ref=e82]:
+        - link "关于" [ref=e83] [cursor=pointer]:
+          - /url: /about/
+        - link "隐私政策" [ref=e84] [cursor=pointer]:
+          - /url: /privacy/
+        - link "条款" [ref=e85] [cursor=pointer]:
+          - /url: /terms/
+        - link "联系我" [ref=e86] [cursor=pointer]:
+          - /url: /contact/
+      - paragraph [ref=e87]: © 2026 Pace的博客 · Pace · 热爱分享，记录技术与生活的点滴
+  - generic [ref=e89]:
+    - paragraph [ref=e90]:
+      - text: 本站使用 Cookie 和本地存储保存主题偏好与评论体验。继续访问即表示你同意我们的
+      - link "隐私政策" [ref=e91] [cursor=pointer]:
+        - /url: /privacy/
+      - text: 。
+    - generic [ref=e92]:
+      - button "拒绝" [ref=e93] [cursor=pointer]
+      - button "接受" [ref=e94] [cursor=pointer]

@@ -1,0 +1,726 @@
+---
+import { env } from 'cloudflare:workers';
+import Layout from '@/layouts/Layout.astro';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+import { SITE } from '@/config';
+import { getSessionCookie, verifySession } from '@/lib/auth';
+
+const backendEntry = Astro.params.backendEntry;
+if (!env.BACKEND_ENTRY || backendEntry !== env.BACKEND_ENTRY) return new Response('Not Found', { status: 404 });
+
+const username = await verifySession(getSessionCookie(Astro.request.headers.get('Cookie') ?? undefined), env.ADMIN_PASSWORD);
+if (!username) return Astro.redirect(`/${backendEntry}/login`);
+
+const rawTab = Astro.url.searchParams.get('tab') || 'new';
+const tab = ['home', 'new', 'posts', 'comments', 'ads', 'ai', 'docs'].includes(rawTab) ? rawTab : 'home';
+const navItems = [
+  ['home', '主页管理'],
+  ['new', '新建文章'],
+  ['posts', '文章管理'],
+  ['comments', '评论管理'],
+  ['ads', '广告管理'],
+  ['ai', 'AI 权限管理'],
+  ['docs', '说明'],
+] as const;
+const adSlots = [
+  ['header_bottom', '首页顶部广告'],
+  ['footer_top', '首页底部广告'],
+  ['content_top', '文章详情顶部广告'],
+  ['content_bottom', '文章详情底部广告'],
+] as const;
+---
+
+<Layout title={`后台 | ${SITE.title}`}>
+  <Header />
+  <main id="main-content" class="mx-auto w-full max-w-6xl px-4 py-8">
+    <section class="border-b border-border pb-6">
+      <p class="text-sm text-muted-foreground">站点后台</p>
+      <h1 class="mt-2 text-3xl font-bold text-accent">内容管理</h1>
+      <p class="mt-3 text-muted-foreground">维护 D1 里的文章、广告位，并查看自动化接口说明。</p>
+      <div class="mt-4 flex flex-wrap gap-3">
+        <a class="rounded border border-border px-3 py-2 hover:text-accent" href="/">返回首页</a>
+        <button id="logout-button" class="rounded border border-border px-3 py-2 hover:text-accent" type="button">退出登录</button>
+      </div>
+    </section>
+
+    <section class="grid gap-6 py-8 md:grid-cols-[180px_minmax(0,1fr)]">
+      <aside class="md:sticky md:top-4 md:self-start">
+        <nav class="grid gap-2 rounded border border-border p-2" aria-label="后台导航">
+          {navItems.map(([key, label]) => (
+            <a
+              class:list={[
+                'rounded px-3 py-2 text-left hover:text-accent',
+                { 'bg-muted/60 text-accent': tab === key },
+              ]}
+              href={`/${backendEntry}?tab=${key}`}
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+      </aside>
+
+      <div class="min-w-0">
+        {tab === 'home' && (
+          <section class="rounded border border-border p-4">
+            <h2 class="text-xl font-semibold">主页管理</h2>
+            <p class="mt-2 text-sm text-muted-foreground">控制首页右侧模块、站点展示信息、标签总开关和技术栈内容。</p>
+            <form id="home-settings-form" class="mt-4 space-y-4" onsubmit="return false">
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">站点标题</span>
+                  <input name="site_title" class="w-full rounded border border-border bg-background px-3 py-2" placeholder={SITE.title} />
+                </label>
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">作者名称</span>
+                  <input name="site_author" class="w-full rounded border border-border bg-background px-3 py-2" placeholder={SITE.author} />
+                </label>
+              </div>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">站点简介</span>
+                <textarea name="site_desc" class="min-h-24 w-full rounded border border-border bg-background px-3 py-2" placeholder={SITE.desc}></textarea>
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">个人信息卡介绍</span>
+                <textarea name="site_intro" class="min-h-24 w-full rounded border border-border bg-background px-3 py-2" placeholder="留空时使用站点简介"></textarea>
+              </label>
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">个人主页 URL</span>
+                  <input name="site_profile" class="w-full rounded border border-border bg-background px-3 py-2" placeholder={SITE.profile} />
+                </label>
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">头像 URL</span>
+                  <input name="site_avatar" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="留空时显示首字母" />
+                </label>
+              </div>
+              <fieldset class="rounded border border-border p-3">
+                <legend class="px-1 text-sm text-muted-foreground">右侧模块显示</legend>
+                <div class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  <label class="flex items-center gap-2 text-sm"><input name="sidebar_profile" type="checkbox" /> 个人信息卡</label>
+                  <label class="flex items-center gap-2 text-sm"><input name="sidebar_tags" type="checkbox" /> 标签</label>
+                  <label class="flex items-center gap-2 text-sm"><input name="sidebar_categories" type="checkbox" /> 分类</label>
+                  <label class="flex items-center gap-2 text-sm"><input name="sidebar_stack" type="checkbox" /> 技术栈</label>
+                  <label class="flex items-center gap-2 text-sm"><input name="tags_enabled" type="checkbox" /> 全站标签入口</label>
+                </div>
+              </fieldset>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">技术栈内容</span>
+                <textarea name="tech_stack" class="min-h-24 w-full rounded border border-border bg-background px-3 py-2" placeholder="Astro,Tailwind,Cloudflare,D1,Hono,Drizzle"></textarea>
+              </label>
+              <div class="flex flex-wrap gap-3">
+                <button class="rounded bg-accent px-4 py-2 text-background" type="submit">保存主页设置</button>
+              </div>
+              <p id="home-settings-message" class="text-sm text-muted-foreground">正在读取设置...</p>
+            </form>
+          </section>
+        )}
+
+        {tab === 'new' && (
+          <section class="rounded border border-border p-4">
+            <h2 id="post-form-title" class="text-xl font-semibold">新建文章</h2>
+            <p class="mt-2 text-sm text-muted-foreground">默认保存为隐藏，检查无误后可在文章管理里发布。</p>
+            <form id="post-form" class="mt-4 space-y-4" onsubmit="return false">
+              <input name="id" type="hidden" />
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">标题</span>
+                <input name="title" class="w-full rounded border border-border bg-background px-3 py-2" required />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">Slug</span>
+                <input name="slug" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="留空时由标题生成" />
+              </label>
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">状态</span>
+                  <select name="status" class="w-full rounded border border-border bg-background px-3 py-2">
+                    <option value="hidden">隐藏</option>
+                    <option value="published">发布</option>
+                  </select>
+                </label>
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">分类</span>
+                  <input name="category" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="随笔" />
+                </label>
+              </div>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">标签</span>
+                <input name="tags" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="用逗号分隔，例如 Cloudflare,VPS" />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">摘要</span>
+                <textarea name="description" class="min-h-24 w-full rounded border border-border bg-background px-3 py-2" placeholder="留空时由正文自动生成"></textarea>
+              </label>
+              <label class="flex items-center gap-2 text-sm text-muted-foreground">
+                <input name="featured" type="checkbox" />
+                推荐文章
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">正文 Markdown</span>
+                <textarea name="content" class="min-h-80 w-full rounded border border-border bg-background px-3 py-2 font-mono text-sm" required></textarea>
+              </label>
+              <div class="flex flex-wrap gap-3">
+                <button class="rounded bg-accent px-4 py-2 text-background" type="submit">保存文章</button>
+                <button id="reset-post-form" class="rounded border border-border px-4 py-2" type="button">清空</button>
+              </div>
+              <p id="post-form-message" class="text-sm text-muted-foreground"></p>
+            </form>
+          </section>
+        )}
+
+        {tab === 'posts' && (
+          <section class="rounded border border-border p-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-xl font-semibold">文章管理</h2>
+                <p class="text-sm text-muted-foreground">编辑、发布、隐藏或删除文章。</p>
+              </div>
+              <a class="rounded bg-accent px-3 py-2 text-background" href={`/${backendEntry}?tab=new`}>新建文章</a>
+            </div>
+            <form id="edit-post-form" class="mt-4 hidden space-y-4 rounded border border-border p-3" onsubmit="return false">
+              <input name="id" type="hidden" />
+              <h3 class="font-semibold">编辑文章</h3>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">标题</span>
+                <input name="title" class="w-full rounded border border-border bg-background px-3 py-2" required />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">Slug</span>
+                <input name="slug" class="w-full rounded border border-border bg-background px-3 py-2" required />
+              </label>
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">状态</span>
+                  <select name="status" class="w-full rounded border border-border bg-background px-3 py-2">
+                    <option value="hidden">隐藏</option>
+                    <option value="published">发布</option>
+                  </select>
+                </label>
+                <label class="block">
+                  <span class="mb-1 block text-sm text-muted-foreground">分类</span>
+                  <input name="category" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="随笔" />
+                </label>
+              </div>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">标签</span>
+                <input name="tags" class="w-full rounded border border-border bg-background px-3 py-2" placeholder="用逗号分隔，例如 Cloudflare,VPS" />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">摘要</span>
+                <textarea name="description" class="min-h-24 w-full rounded border border-border bg-background px-3 py-2" placeholder="留空时由正文自动生成"></textarea>
+              </label>
+              <label class="flex items-center gap-2 text-sm text-muted-foreground">
+                <input name="featured" type="checkbox" />
+                推荐文章
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">正文 Markdown</span>
+                <textarea name="content" class="min-h-80 w-full rounded border border-border bg-background px-3 py-2 font-mono text-sm" required></textarea>
+              </label>
+              <div class="flex flex-wrap gap-3">
+                <button class="rounded bg-accent px-4 py-2 text-background" type="submit">保存修改</button>
+                <button id="cancel-edit-post" class="rounded border border-border px-4 py-2" type="button">取消编辑</button>
+              </div>
+            </form>
+            <p id="posts-message" class="mt-4 text-sm text-muted-foreground">正在读取文章...</p>
+            <ul id="posts-list" class="mt-4 space-y-3"></ul>
+          </section>
+        )}
+
+        {tab === 'comments' && (
+          <section class="rounded border border-border p-4">
+            <h2 class="text-xl font-semibold">评论管理</h2>
+            <p class="mt-2 text-sm text-muted-foreground">评论默认进入待审核，审核通过后才会在文章页展示。</p>
+            <form id="comment-settings-form" class="mt-4 rounded border border-border p-3" onsubmit="return false">
+              <label class="flex items-center gap-2 text-sm">
+                <input name="comments_enabled" type="checkbox" />
+                启用评论机制
+              </label>
+              <button class="mt-3 rounded bg-accent px-3 py-2 text-sm text-background" type="submit">保存评论开关</button>
+              <p id="comment-settings-message" class="mt-3 text-sm text-muted-foreground">正在读取评论设置...</p>
+            </form>
+            <div class="mt-5 flex flex-wrap gap-2 text-sm">
+              <button class="rounded border border-border px-3 py-2" data-comment-filter="pending" type="button">待审核</button>
+              <button class="rounded border border-border px-3 py-2" data-comment-filter="published" type="button">已发布</button>
+              <button class="rounded border border-border px-3 py-2" data-comment-filter="hidden" type="button">已隐藏</button>
+            </div>
+            <p id="comments-message" class="mt-4 text-sm text-muted-foreground">正在读取评论...</p>
+            <ul id="comments-list" class="mt-4 space-y-3"></ul>
+          </section>
+        )}
+
+        {tab === 'ads' && (
+          <section class="rounded border border-border p-4">
+            <h2 class="text-xl font-semibold">广告管理</h2>
+            <p class="mt-2 text-sm text-muted-foreground">只保留首页顶部/底部、文章详情顶部/底部四个广告位。广告容器会限制宽度和高度，避免公告或广告代码撑破页面。</p>
+            <p class="mt-2 rounded border border-border bg-muted/40 p-3 text-sm text-muted-foreground">建议使用响应式 Google 广告代码或图片 URL；避免 fixed 定位、超宽 iframe、全屏弹窗等会破坏页面布局的代码。</p>
+            <div id="ads-list" class="mt-4 grid gap-4 md:grid-cols-2">
+              {adSlots.map(([position, label]) => (
+                <form class="rounded border border-border p-3" data-ad-form={position} onsubmit="return false">
+                  <h3 class="font-semibold">{label}</h3>
+                  <label class="mt-3 flex items-center gap-2 text-sm">
+                    <input name="isEnabled" type="checkbox" />
+                    启用
+                  </label>
+                  <label class="mt-3 block">
+                    <span class="mb-1 block text-sm text-muted-foreground">广告代码</span>
+                    <textarea name="adCode" class="min-h-28 w-full rounded border border-border bg-background px-3 py-2 font-mono text-xs"></textarea>
+                  </label>
+                  <button class="mt-3 rounded bg-accent px-3 py-2 text-sm text-background" type="submit">保存广告位</button>
+                </form>
+              ))}
+            </div>
+            <p id="ads-message" class="mt-4 text-sm text-muted-foreground">广告位表单已载入，正在读取已有配置...</p>
+          </section>
+        )}
+
+        {tab === 'ai' && (
+          <section class="rounded border border-border p-4">
+            <h2 class="text-xl font-semibold">AI 权限管理</h2>
+            <p class="mt-2 text-sm text-muted-foreground">控制 AI 专用接口可以创建什么内容。接口仍需要正确的后台入口和 AI_API_TOKEN。</p>
+            <form id="ai-settings-form" class="mt-4 space-y-4" onsubmit="return false">
+              <fieldset class="rounded border border-border p-3">
+                <legend class="px-1 text-sm text-muted-foreground">发文权限</legend>
+                <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                  <label class="flex items-center gap-2 text-sm"><input name="ai_can_create_post" type="checkbox" /> 允许 AI 创建文章</label>
+                  <label class="flex items-center gap-2 text-sm"><input name="ai_can_publish_post" type="checkbox" /> 允许 AI 直接发布</label>
+                  <label class="flex items-center gap-2 text-sm"><input name="ai_can_set_featured" type="checkbox" /> 允许 AI 设置推荐文章</label>
+                  <label class="flex items-center gap-2 text-sm"><input name="ai_can_set_category" type="checkbox" /> 允许 AI 设置分类</label>
+                  <label class="flex items-center gap-2 text-sm"><input name="ai_can_set_tags" type="checkbox" /> 允许 AI 设置标签</label>
+                </div>
+              </fieldset>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">AI 默认文章状态</span>
+                <select name="ai_default_status" class="w-full rounded border border-border bg-background px-3 py-2">
+                  <option value="hidden">隐藏</option>
+                  <option value="published">发布</option>
+                </select>
+              </label>
+              <button class="rounded bg-accent px-4 py-2 text-background" type="submit">保存 AI 权限</button>
+              <p id="ai-settings-message" class="text-sm text-muted-foreground">正在读取 AI 权限...</p>
+            </form>
+          </section>
+        )}
+
+        {tab === 'docs' && (
+          <section class="rounded border border-border p-4">
+            <h2 class="text-xl font-semibold text-accent">后台与 API 使用说明</h2>
+            <div class="app-prose mt-4 max-w-none text-sm">
+              <p>后台入口由 <code>BACKEND_ENTRY</code> 控制，AI 发文使用独立接口和 <code>AI_API_TOKEN</code>，不需要登录后台，也不使用 <code>JWT_SECRET</code>。</p>
+              <h3>AI 发文接口</h3>
+              <p>接口地址同时校验后台入口和 AI token。AI 权限由“AI 权限管理”页面控制。</p>
+              <pre><code set:html={`POST /api/${backendEntry}/ai/posts
+Authorization: Bearer 你的 AI_API_TOKEN
+Content-Type: application/json
+
+{
+  &quot;title&quot;: &quot;文章标题&quot;,
+  &quot;slug&quot;: &quot;article-slug&quot;,
+  &quot;status&quot;: &quot;hidden&quot;,
+  &quot;category&quot;: &quot;Cloudflare&quot;,
+  &quot;tags&quot;: &quot;Cloudflare,VPS,独立博客&quot;,
+  &quot;description&quot;: &quot;文章摘要，留空时会由正文自动生成。&quot;,
+  &quot;featured&quot;: false,
+  &quot;content&quot;: &quot;# Markdown 正文\n\n这里写文章内容。&quot;
+}`} /></pre>
+              <ul>
+                <li><code>title</code> 和 <code>content</code> 必填。</li>
+                <li><code>slug</code> 可选，留空时由标题生成。</li>
+                <li><code>status</code> 可为 <code>hidden</code> 或 <code>published</code>，但会受 AI 权限限制。</li>
+                <li>如果未允许 AI 直接发布，即使传入 <code>published</code> 也会按默认状态保存。</li>
+              </ul>
+              <h3>后台接口</h3>
+              <ul>
+                <li><code>GET /api/posts?status=published&amp;pageSize=20</code>：公开读取已发布文章。</li>
+                <li><code>POST /api/posts</code>：人类后台登录后创建文章。</li>
+                <li><code>PUT /api/posts/:id</code>：人类后台登录后更新文章。</li>
+                <li><code>PATCH /api/posts/:id/status</code>：人类后台登录后发布或隐藏文章。</li>
+                <li><code>DELETE /api/posts/:id</code>：人类后台登录后删除文章。</li>
+              </ul>
+            </div>
+          </section>
+        )}
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<script define:vars={{ tab, backendEntry }} data-astro-rerun>
+  async function api(path, options = {}) {
+    const response = await fetch(`/api/${path}`, {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
+      ...options,
+    });
+    const text = await response.text();
+    let result;
+    try {
+      result = text ? JSON.parse(text) : { success: false, message: '接口返回为空' };
+    } catch {
+      throw new Error(`接口返回非 JSON（${response.status}）：${text.slice(0, 80) || response.statusText}`);
+    }
+    if (!response.ok || !result.success) throw new Error(result.message || '请求失败');
+    return result.data ?? result;
+  }
+
+  function setText(element, text) {
+    if (element) element.textContent = text;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function excerpt(content) {
+    return String(content || '').replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 90);
+  }
+
+  document.querySelector('#logout-button')?.addEventListener('click', async () => {
+    try {
+      await api('auth/logout', { method: 'POST' });
+    } finally {
+      window.location.href = `/${backendEntry}/login`;
+    }
+  });
+
+  if (tab === 'home') {
+    const form = document.querySelector('#home-settings-form');
+    const message = document.querySelector('#home-settings-message');
+    const checkboxNames = ['sidebar_profile', 'sidebar_tags', 'sidebar_categories', 'sidebar_stack', 'tags_enabled'];
+
+    async function loadHomeSettings() {
+      try {
+        const data = await api('settings');
+        const raw = data.raw || {};
+        ['site_title', 'site_author', 'site_desc', 'site_intro', 'site_profile', 'site_avatar', 'tech_stack'].forEach(name => {
+          if (form?.[name]) form[name].value = raw[name] || '';
+        });
+        checkboxNames.forEach(name => {
+          if (form?.[name]) form[name].checked = raw[name] !== 'false';
+        });
+        setText(message, '设置已载入。');
+      } catch (error) {
+        setText(message, `读取设置失败：${error.message}`);
+      }
+    }
+
+    form?.addEventListener('submit', async event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const payload = {
+        site_title: form.site_title.value,
+        site_author: form.site_author.value,
+        site_desc: form.site_desc.value,
+        site_intro: form.site_intro.value,
+        site_profile: form.site_profile.value,
+        site_avatar: form.site_avatar.value,
+        tech_stack: form.tech_stack.value,
+      };
+      checkboxNames.forEach(name => { payload[name] = form[name].checked; });
+      try {
+        setText(message, '正在保存...');
+        await api('settings', { method: 'PUT', body: JSON.stringify(payload) });
+        setText(message, '主页设置已保存。');
+      } catch (error) {
+        setText(message, `保存失败：${error.message}`);
+      }
+    });
+
+    loadHomeSettings();
+  }
+
+  if (tab === 'new') {
+    const form = document.querySelector('#post-form');
+    const message = document.querySelector('#post-form-message');
+    document.querySelector('#reset-post-form')?.addEventListener('click', () => {
+      form?.reset();
+      setText(message, '');
+    });
+    form?.addEventListener('submit', async event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const payload = {
+        title: form.title.value,
+        slug: form.slug.value,
+        status: form.status.value,
+        category: form.category.value,
+        tags: form.tags.value,
+        description: form.description.value,
+        featured: form.featured.checked,
+        content: form.content.value,
+      };
+      try {
+        setText(message, '正在保存...');
+        await api('posts', { method: 'POST', body: JSON.stringify(payload) });
+        setText(message, '保存成功。可以到文章管理里查看。');
+        form.reset();
+      } catch (error) {
+        setText(message, `保存失败：${error.message}`);
+      }
+    });
+  }
+
+  if (tab === 'posts') {
+    const list = document.querySelector('#posts-list');
+    const message = document.querySelector('#posts-message');
+    const editForm = document.querySelector('#edit-post-form');
+    let currentPosts = [];
+
+    function editField(name) {
+      return editForm?.querySelector(`[name="${name}"]`);
+    }
+
+    function closeEditForm() {
+      editForm?.reset();
+      editForm?.classList.add('hidden');
+    }
+
+    function openEditForm(post) {
+      editField('id').value = post.id;
+      editField('title').value = post.title;
+      editField('slug').value = post.slug;
+      editField('status').value = post.status;
+      editField('category').value = post.category || '随笔';
+      editField('tags').value = post.tags || '';
+      editField('description').value = post.description || '';
+      editField('featured').checked = Boolean(post.featured);
+      editField('content').value = post.content;
+      editForm.classList.remove('hidden');
+      editForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      editField('title').focus();
+    }
+
+    async function loadPosts() {
+      try {
+        const data = await api('posts?pageSize=50');
+        const posts = data.posts || [];
+        currentPosts = posts;
+        list.innerHTML = posts.length ? posts.map(post => `
+          <li class="rounded border border-border p-3">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 class="font-semibold">${escapeHtml(post.title)}</h3>
+                <p class="text-sm text-muted-foreground">/${escapeHtml(post.slug)} · ${post.status === 'published' ? '已发布' : '隐藏'} · ${escapeHtml(post.category || '随笔')} · ${Number(post.viewCount || 0)} 次阅读</p>
+                <p class="mt-2 text-sm">${escapeHtml(post.description || excerpt(post.content))}</p>
+              </div>
+              <div class="flex flex-wrap gap-2 text-sm">
+                <button class="rounded border border-border px-2 py-1" data-edit="${post.id}" type="button">编辑</button>
+                <button class="rounded border border-border px-2 py-1" data-toggle="${post.id}" data-status="${post.status === 'published' ? 'hidden' : 'published'}" type="button">${post.status === 'published' ? '隐藏' : '发布'}</button>
+                <button class="rounded border border-border px-2 py-1 text-red-500" data-delete="${post.id}" type="button">删除</button>
+              </div>
+            </div>
+          </li>
+        `).join('') : '<li class="text-sm text-muted-foreground">还没有文章。</li>';
+        setText(message, `已读取 ${posts.length} 篇文章。`);
+      } catch (error) {
+        setText(message, `读取文章失败：${error.message}`);
+        if (String(error.message).includes('未登录')) window.location.href = `/${backendEntry}/login`;
+      }
+    }
+    list?.addEventListener('click', async event => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const editId = target.dataset.edit;
+      const toggleId = target.dataset.toggle;
+      const deleteId = target.dataset.delete;
+      if (editId) {
+        const post = currentPosts.find(item => String(item.id) === editId);
+        if (post) openEditForm(post);
+      }
+      if (toggleId) {
+        await api(`posts/${toggleId}/status`, { method: 'PATCH', body: JSON.stringify({ status: target.dataset.status }) });
+        await loadPosts();
+      }
+      if (deleteId && confirm('确定删除这篇文章吗？这个操作不能撤销。')) {
+        await api(`posts/${deleteId}`, { method: 'DELETE' });
+        await loadPosts();
+      }
+    });
+    editForm?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const id = editField('id').value;
+      try {
+        setText(message, '正在保存修改...');
+        await api(`posts/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            title: editField('title').value,
+            slug: editField('slug').value,
+            category: editField('category').value,
+            tags: editField('tags').value,
+            description: editField('description').value,
+            featured: editField('featured').checked,
+            content: editField('content').value,
+          }),
+        });
+        await api(`posts/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: editField('status').value }) });
+        closeEditForm();
+        await loadPosts();
+        setText(message, '文章修改已保存。');
+      } catch (error) {
+        setText(message, `保存失败：${error.message}`);
+      }
+    });
+    document.querySelector('#cancel-edit-post')?.addEventListener('click', closeEditForm);
+    loadPosts();
+  }
+
+  if (tab === 'comments') {
+    const settingsForm = document.querySelector('#comment-settings-form');
+    const settingsMessage = document.querySelector('#comment-settings-message');
+    const list = document.querySelector('#comments-list');
+    const message = document.querySelector('#comments-message');
+    let currentFilter = 'pending';
+
+    async function loadCommentSettings() {
+      try {
+        const data = await api('settings');
+        settingsForm.comments_enabled.checked = data.raw?.comments_enabled !== 'false';
+        setText(settingsMessage, '评论设置已载入。');
+      } catch (error) {
+        setText(settingsMessage, `读取设置失败：${error.message}`);
+      }
+    }
+
+    async function loadComments() {
+      try {
+        const data = await api(`comments?status=${currentFilter}`);
+        const comments = data.comments || [];
+        list.innerHTML = comments.length ? comments.map(comment => `
+          <li class="rounded border border-border p-3">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 class="font-semibold">${escapeHtml(comment.author)}</h3>
+                <p class="text-sm text-muted-foreground">${escapeHtml(comment.status)} · ${new Date(comment.createdAt).toLocaleString('zh-CN')}</p>
+                <p class="mt-2 whitespace-pre-wrap text-sm">${escapeHtml(comment.content)}</p>
+              </div>
+              <div class="flex flex-wrap gap-2 text-sm">
+                <button class="rounded border border-border px-2 py-1" data-comment-status="published" data-comment-id="${comment.id}" type="button">通过</button>
+                <button class="rounded border border-border px-2 py-1" data-comment-status="hidden" data-comment-id="${comment.id}" type="button">隐藏</button>
+                <button class="rounded border border-border px-2 py-1 text-red-500" data-comment-delete="${comment.id}" type="button">删除</button>
+              </div>
+            </div>
+          </li>
+        `).join('') : '<li class="text-sm text-muted-foreground">当前没有评论。</li>';
+        setText(message, `已读取 ${comments.length} 条评论。`);
+      } catch (error) {
+        setText(message, `读取评论失败：${error.message}`);
+      }
+    }
+
+    settingsForm?.addEventListener('submit', async event => {
+      event.preventDefault();
+      try {
+        setText(settingsMessage, '正在保存...');
+        await api('settings', { method: 'PUT', body: JSON.stringify({ comments_enabled: settingsForm.comments_enabled.checked }) });
+        setText(settingsMessage, '评论开关已保存。');
+      } catch (error) {
+        setText(settingsMessage, `保存失败：${error.message}`);
+      }
+    });
+
+    document.querySelectorAll('[data-comment-filter]').forEach(button => {
+      button.addEventListener('click', async () => {
+        currentFilter = button.dataset.commentFilter;
+        await loadComments();
+      });
+    });
+
+    list?.addEventListener('click', async event => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const id = target.dataset.commentId;
+      const status = target.dataset.commentStatus;
+      const deleteId = target.dataset.commentDelete;
+      if (id && status) {
+        await api(`comments/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+        await loadComments();
+      }
+      if (deleteId && confirm('确定删除这条评论吗？')) {
+        await api(`comments/${deleteId}`, { method: 'DELETE' });
+        await loadComments();
+      }
+    });
+
+    loadCommentSettings();
+    loadComments();
+  }
+
+  if (tab === 'ai') {
+    const form = document.querySelector('#ai-settings-form');
+    const message = document.querySelector('#ai-settings-message');
+    const checkboxNames = ['ai_can_create_post', 'ai_can_publish_post', 'ai_can_set_featured', 'ai_can_set_category', 'ai_can_set_tags'];
+
+    async function loadAiSettings() {
+      try {
+        const data = await api('settings');
+        const raw = data.raw || {};
+        checkboxNames.forEach(name => {
+          if (form?.[name]) form[name].checked = raw[name] !== 'false';
+        });
+        if (form?.ai_default_status) form.ai_default_status.value = raw.ai_default_status === 'published' ? 'published' : 'hidden';
+        setText(message, 'AI 权限已载入。');
+      } catch (error) {
+        setText(message, `读取 AI 权限失败：${error.message}`);
+      }
+    }
+
+    form?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const payload = { ai_default_status: form.ai_default_status.value };
+      checkboxNames.forEach(name => { payload[name] = form[name].checked; });
+      try {
+        setText(message, '正在保存...');
+        await api('settings', { method: 'PUT', body: JSON.stringify(payload) });
+        setText(message, 'AI 权限已保存。');
+      } catch (error) {
+        setText(message, `保存失败：${error.message}`);
+      }
+    });
+
+    loadAiSettings();
+  }
+
+  if (tab === 'ads') {
+    const list = document.querySelector('#ads-list');
+    const message = document.querySelector('#ads-message');
+    async function loadAds() {
+      try {
+        const data = await api('ads');
+        const slots = data.adSlots || [];
+        slots.forEach(slot => {
+          const form = list?.querySelector(`[data-ad-form="${slot.position}"]`);
+          if (!form) return;
+          form.adCode.value = slot.adCode ?? slot.ad_code ?? '';
+          form.isEnabled.checked = Boolean(slot.isEnabled ?? slot.is_enabled);
+        });
+        setText(message, `已读取 ${slots.length} 个广告位。`);
+      } catch (error) {
+        setText(message, `读取广告位失败：${error.message}。表单仍可填写并保存。`);
+      }
+    }
+    list?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const form = event.target;
+      const position = form.dataset.adForm;
+      try {
+        await api(`ads/${position}`, {
+          method: 'PUT',
+          body: JSON.stringify({ adCode: form.adCode.value, isEnabled: form.isEnabled.checked }),
+        });
+        setText(message, '广告位已保存。');
+        await loadAds();
+      } catch (error) {
+        setText(message, `保存失败：${error.message}`);
+      }
+    });
+    loadAds();
+  }
+</script>

@@ -67,8 +67,9 @@ npm run preview
 
 | 变量名 | 必填 | 用途 |
 | --- | --- | --- |
-| `ADMIN_PASSWORD` | 是 | 后台登录密码 |
-| `JWT_SECRET` | 是 | 签发后台 session 的密钥 |
+| `ADMIN_PASSWORD` | 是 | 后台登录密码，也用于签发后台 session |
+| `BACKEND_ENTRY` | 是 | 自定义后台入口，例如 `secret-admin`，后台地址为 `/{BACKEND_ENTRY}` |
+| `AI_API_TOKEN` | 是 | AI 专用发文接口 token |
 | `PUBLIC_GOOGLE_ADSENSE_ACCOUNT` | 否 | Google AdSense 账号，例如 `ca-pub-3317750744914675` |
 
 不要把真实密码、密钥或 Token 写进代码仓库。
@@ -119,33 +120,42 @@ npm run db:remote
 - `/`：首页
 - `/posts/`：文章列表
 - `/posts/:slug`：文章详情
-- `/login`：后台登录
-- `/admin`：后台管理
+- `/{BACKEND_ENTRY}/login`：后台登录
+- `/{BACKEND_ENTRY}`：后台管理
+
+`/login` 和 `/admin` 不是后台入口，会跳回首页。
 
 ## API 路由
 
 - `GET /api/posts?status=published&pageSize=20`：读取已发布文章列表
 - `GET /api/posts/:slug`：读取单篇已发布文章
 - `POST /api/auth/login`：后台登录
-- `POST /api/posts`：创建文章
+- `POST /api/{BACKEND_ENTRY}/ai/posts`：AI token 专用创建文章
+- `POST /api/posts`：后台登录后创建文章
 - `PUT /api/posts/:id`：更新文章
 - `PATCH /api/posts/:id/status`：更新文章状态
 - `DELETE /api/posts/:id`：删除文章
 
-创建文章示例：
+AI 创建文章示例：
 
 ```http
-POST /api/posts
+POST /api/{BACKEND_ENTRY}/ai/posts
+Authorization: Bearer 你的 AI_API_TOKEN
 Content-Type: application/json
-Cookie: boke_session=登录后的 session cookie
 
 {
   "title": "文章标题",
   "slug": "article-slug",
-  "status": "published",
+  "status": "hidden",
+  "category": "Cloudflare",
+  "tags": "Cloudflare,VPS,独立博客",
+  "description": "文章摘要，留空时会由正文自动生成。",
+  "featured": false,
   "content": "# Markdown 正文\n\n这里写文章内容。"
 }
 ```
+
+后台手动创建文章仍使用后台页面，不建议让 AI 调用后台 cookie 接口。
 
 字段说明：
 
@@ -178,7 +188,7 @@ npm run db:remote
 
 5. 部署到 Cloudflare Pages。
 
-6. 访问 `/login`，使用后台密码登录管理页面。
+6. 访问 `/{BACKEND_ENTRY}/login`，使用后台密码登录管理页面。
 
 ## 常见问题
 
@@ -192,7 +202,7 @@ npm run db:remote
 检查：
 
 - 是否设置了 `ADMIN_PASSWORD`。
-- 是否设置了 `JWT_SECRET`。
+- 是否设置了 `BACKEND_ENTRY`。
 - 输入密码是否与环境变量一致。
 - 修改环境变量后是否重新部署。
 
@@ -210,4 +220,12 @@ npm run db:remote
 
 - 是否已经登录后台。
 - 请求是否携带 `boke_session` cookie。
-- `JWT_SECRET` 是否与线上环境一致。
+- 修改 `ADMIN_PASSWORD` 后，旧 cookie 会自动失效，需要重新登录。
+
+### AI 发文失败
+
+检查：
+
+- 接口路径是否为 `/api/{BACKEND_ENTRY}/ai/posts`。
+- `Authorization` 是否为 `Bearer 你的 AI_API_TOKEN`。
+- 后台“AI 权限管理”是否允许 AI 创建文章。

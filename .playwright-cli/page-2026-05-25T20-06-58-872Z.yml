@@ -1,0 +1,100 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "Pace的博客" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=e6]:
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - link "首页" [ref=e9] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e10]:
+            - link "归档" [ref=e11] [cursor=pointer]:
+              - /url: /archive/
+          - listitem [ref=e12]:
+            - link "search" [ref=e13] [cursor=pointer]:
+              - /url: /search
+              - img [ref=e14]
+              - generic [ref=e18]: 搜索
+          - listitem [ref=e19]:
+            - button "light" [ref=e20] [cursor=pointer]:
+              - img [ref=e21]
+              - img
+  - main [ref=e24]:
+    - generic [ref=e25]:
+      - paragraph [ref=e26]: 站点后台
+      - heading "内容管理" [level=1] [ref=e27]
+      - paragraph [ref=e28]: 维护 D1 里的文章、广告位，并查看自动化接口说明。
+      - generic [ref=e29]:
+        - link "返回首页" [ref=e30] [cursor=pointer]:
+          - /url: /
+        - button "退出登录" [ref=e31] [cursor=pointer]
+    - generic [ref=e32]:
+      - complementary [ref=e33]:
+        - navigation "后台导航" [ref=e34]:
+          - link "主页管理" [ref=e35] [cursor=pointer]:
+            - /url: /secret-admin?tab=home
+          - link "新建文章" [ref=e36] [cursor=pointer]:
+            - /url: /secret-admin?tab=new
+          - link "文章管理" [ref=e37] [cursor=pointer]:
+            - /url: /secret-admin?tab=posts
+          - link "评论管理" [ref=e38] [cursor=pointer]:
+            - /url: /secret-admin?tab=comments
+          - link "广告管理" [ref=e39] [cursor=pointer]:
+            - /url: /secret-admin?tab=ads
+          - link "AI 权限管理" [ref=e40] [cursor=pointer]:
+            - /url: /secret-admin?tab=ai
+          - link "说明" [ref=e41] [cursor=pointer]:
+            - /url: /secret-admin?tab=docs
+      - generic [ref=e43]:
+        - heading "AI 权限管理" [level=2] [ref=e44]
+        - paragraph [ref=e45]: 控制 AI 专用接口可以创建什么内容。接口仍需要正确的后台入口和 AI_API_TOKEN。
+        - generic [ref=e46]:
+          - group "发文权限" [ref=e47]:
+            - generic [ref=e48]: 发文权限
+            - generic [ref=e49]:
+              - generic [ref=e50]:
+                - checkbox "允许 AI 创建文章" [checked] [ref=e51]
+                - text: 允许 AI 创建文章
+              - generic [ref=e52]:
+                - checkbox "允许 AI 直接发布" [ref=e53]
+                - text: 允许 AI 直接发布
+              - generic [ref=e54]:
+                - checkbox "允许 AI 设置推荐文章" [ref=e55]
+                - text: 允许 AI 设置推荐文章
+              - generic [ref=e56]:
+                - checkbox "允许 AI 设置分类" [checked] [ref=e57]
+                - text: 允许 AI 设置分类
+              - generic [ref=e58]:
+                - checkbox "允许 AI 设置标签" [checked] [ref=e59]
+                - text: 允许 AI 设置标签
+          - generic [ref=e60]:
+            - generic [ref=e61]: AI 默认文章状态
+            - combobox "AI 默认文章状态" [ref=e62]:
+              - option "隐藏" [selected]
+              - option "发布"
+          - button "保存 AI 权限" [ref=e63] [cursor=pointer]
+          - paragraph [ref=e64]: AI 权限已载入。
+  - contentinfo [ref=e65]:
+    - generic [ref=e66]:
+      - navigation "页脚导航" [ref=e67]:
+        - link "关于" [ref=e68] [cursor=pointer]:
+          - /url: /about/
+        - link "隐私政策" [ref=e69] [cursor=pointer]:
+          - /url: /privacy/
+        - link "条款" [ref=e70] [cursor=pointer]:
+          - /url: /terms/
+        - link "联系我" [ref=e71] [cursor=pointer]:
+          - /url: /contact/
+      - paragraph [ref=e72]: © 2026 Pace的博客 · Pace · 热爱分享，记录技术与生活的点滴
+  - generic [ref=e74]:
+    - paragraph [ref=e75]:
+      - text: 本站使用 Cookie 和本地存储保存主题偏好与评论体验。继续访问即表示你同意我们的
+      - link "隐私政策" [ref=e76] [cursor=pointer]:
+        - /url: /privacy/
+      - text: 。
+    - generic [ref=e77]:
+      - button "拒绝" [ref=e78] [cursor=pointer]
+      - button "接受" [ref=e79] [cursor=pointer]

@@ -16,8 +16,9 @@
 
 4. 配置环境变量
    在 Pages 项目 Settings -> Environment variables 中新增：
-   JWT_SECRET=一段足够长的随机字符串
    ADMIN_PASSWORD=后台登录密码，可后续直接在 Cloudflare 中修改
+   BACKEND_ENTRY=自定义后台入口，例如 secret-admin
+   AI_API_TOKEN=AI 专用发文接口 token
 
 5. 推送数据库迁移
    如果用 wrangler CLI 推送迁移，在本地 wrangler.toml 末尾临时追加 D1 配置：
@@ -33,8 +34,9 @@
    如果不想在本地配置 database_id，也可以直接在 Cloudflare D1 控制台执行 drizzle 目录里的 SQL。
 
 6. 后台登录方式
-   访问 /login，只输入 ADMIN_PASSWORD 对应的后台密码即可登录。
-   后续改密码只需修改 Cloudflare Pages 环境变量 ADMIN_PASSWORD 并重新部署。
+   访问 /{BACKEND_ENTRY}/login，只输入 ADMIN_PASSWORD 对应的后台密码即可登录。
+   例如 BACKEND_ENTRY=secret-admin 时，访问 /secret-admin/login。
+   后续改密码只需修改 Cloudflare Pages 环境变量 ADMIN_PASSWORD 并重新部署，旧登录状态会失效。
 
 7. 部署到 Cloudflare Pages
    将代码推送到 GitHub，并在 Cloudflare Pages 连接该仓库。

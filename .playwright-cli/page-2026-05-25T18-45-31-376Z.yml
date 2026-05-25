@@ -1,0 +1,56 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "Pace的博客" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=e6]:
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - link "首页" [ref=e9] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e10]:
+            - link "归档" [ref=e11] [cursor=pointer]:
+              - /url: /archive/
+          - listitem [ref=e12]:
+            - link "search" [ref=e13] [cursor=pointer]:
+              - /url: /search
+              - img [ref=e14]
+              - generic [ref=e18]: 搜索
+          - listitem [ref=e19]:
+            - button "light" [ref=e20] [cursor=pointer]:
+              - img [ref=e21]
+              - img
+  - main [ref=e24]:
+    - generic [ref=e25]:
+      - paragraph [ref=e26]: 站点后台
+      - heading "登录" [level=1] [ref=e27]
+      - paragraph [ref=e28]: 输入 Cloudflare 环境变量 ADMIN_PASSWORD 中配置的后台密码。
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: 后台密码
+          - textbox "后台密码" [ref=e32]
+        - button "登录后台" [ref=e33] [cursor=pointer]
+        - paragraph
+  - contentinfo [ref=e34]:
+    - generic [ref=e35]:
+      - navigation "页脚导航" [ref=e36]:
+        - link "关于" [ref=e37] [cursor=pointer]:
+          - /url: /about/
+        - link "隐私政策" [ref=e38] [cursor=pointer]:
+          - /url: /privacy/
+        - link "条款" [ref=e39] [cursor=pointer]:
+          - /url: /terms/
+        - link "联系我" [ref=e40] [cursor=pointer]:
+          - /url: /contact/
+      - paragraph [ref=e41]: © 2026 Pace的博客 · Pace · 热爱分享，记录技术与生活的点滴
+  - generic [ref=e43]:
+    - paragraph [ref=e44]:
+      - text: 本站使用 Cookie 和本地存储保存主题偏好与评论体验。继续访问即表示你同意我们的
+      - link "隐私政策" [ref=e45] [cursor=pointer]:
+        - /url: /privacy/
+      - text: 。
+    - generic [ref=e46]:
+      - button "拒绝" [ref=e47] [cursor=pointer]
+      - button "接受" [ref=e48] [cursor=pointer]
