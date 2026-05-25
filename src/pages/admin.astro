@@ -77,6 +77,10 @@ const adSlots = [
                 <span class="mb-1 block text-sm text-muted-foreground">站点简介</span>
                 <textarea name="site_desc" class="min-h-24 w-full rounded border border-border bg-background px-3 py-2" placeholder={SITE.desc}></textarea>
               </label>
+              <label class="block">
+                <span class="mb-1 block text-sm text-muted-foreground">个人信息卡介绍</span>
+                <textarea name="site_intro" class="min-h-24 w-full rounded border border-border bg-background px-3 py-2" placeholder="留空时使用站点简介"></textarea>
+              </label>
               <div class="grid gap-4 md:grid-cols-2">
                 <label class="block">
                   <span class="mb-1 block text-sm text-muted-foreground">个人主页 URL</span>
@@ -374,7 +378,7 @@ Cookie: session=登录接口返回的 session cookie
       try {
         const data = await api('settings');
         const raw = data.raw || {};
-        ['site_title', 'site_author', 'site_desc', 'site_profile', 'site_avatar', 'tech_stack'].forEach(name => {
+        ['site_title', 'site_author', 'site_desc', 'site_intro', 'site_profile', 'site_avatar', 'tech_stack'].forEach(name => {
           if (form?.[name]) form[name].value = raw[name] || '';
         });
         checkboxNames.forEach(name => {
@@ -393,6 +397,7 @@ Cookie: session=登录接口返回的 session cookie
         site_title: form.site_title.value,
         site_author: form.site_author.value,
         site_desc: form.site_desc.value,
+        site_intro: form.site_intro.value,
         site_profile: form.site_profile.value,
         site_avatar: form.site_avatar.value,
         tech_stack: form.tech_stack.value,

@@ -43,6 +43,7 @@ const defaultSettings = {
   comments_enabled: 'true',
   site_title: '',
   site_desc: '',
+  site_intro: '',
   site_author: '',
   site_profile: '',
   site_avatar: '',
@@ -70,6 +71,7 @@ function publicSettings(settings: Record<string, string>) {
     site: {
       title: settings.site_title,
       desc: settings.site_desc,
+      intro: settings.site_intro,
       author: settings.site_author,
       profile: settings.site_profile,
       avatar: settings.site_avatar,

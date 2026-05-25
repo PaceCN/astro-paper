@@ -9,7 +9,7 @@ type Meta = {
   categories: { name: string; count: number }[];
   settings?: {
     tagsEnabled: boolean;
-    site: { title: string; desc: string; author: string; profile: string; avatar: string };
+    site: { title: string; desc: string; intro?: string; author: string; profile: string; avatar: string };
     sidebar: { profile: boolean; tags: boolean; categories: boolean; stack: boolean };
     techStack: string[];
   };
@@ -21,7 +21,7 @@ const sidebar = meta.settings?.sidebar ?? SITE.homeSidebar;
 const site = meta.settings?.site;
 const title = site?.title || SITE.title;
 const author = site?.author || SITE.author;
-const desc = site?.desc || SITE.desc;
+const intro = site?.intro || site?.desc || SITE.desc;
 const profile = site?.profile || SITE.profile;
 const avatar = site?.avatar || '';
 const tagsEnabled = meta.settings?.tagsEnabled ?? true;
@@ -38,7 +38,7 @@ const techStack = meta.settings?.techStack?.length ? meta.settings.techStack : [
           <p class="text-sm text-subtle">{meta.totalPosts} 篇文章</p>
         </div>
       </div>
-      <p class="mt-4 text-sm leading-6 text-subtle">{desc}</p>
+      <p class="mt-4 text-sm leading-6 text-subtle">{intro}</p>
       <div class="mt-4 flex flex-wrap gap-2">
         <a class="chip" href={profile}>GitHub</a>
         <a class="chip" href="/about/">关于</a>
