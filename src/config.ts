@@ -4,7 +4,7 @@ export const SITE = {
   profile: "https://github.com/PaceCN",
   desc: "比朋友圈更长一点，比学术论文更有趣一点。",
   title: "Pace的博客",
-  ogImage: "favicon.svg",
+  ogImage: "og.svg",
   lightAndDarkMode: true,
   postPerIndex: 6,
   postPerPage: 12,

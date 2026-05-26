@@ -9,7 +9,7 @@ const backendEntry = Astro.params.backendEntry;
 if (!env.BACKEND_ENTRY || backendEntry !== env.BACKEND_ENTRY) return new Response('Not Found', { status: 404 });
 ---
 
-<Layout title={`后台登录 | ${SITE.title}`}>
+<Layout title={`后台登录 | ${SITE.title}`} robots="noindex,follow">
   <Header />
   <main id="main-content" class="app-layout py-12">
     <section class="mx-auto max-w-sm rounded border border-border p-6">

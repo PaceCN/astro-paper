@@ -41,9 +41,10 @@ const groups = posts.reduce<Record<string, Post[]>>((acc, post) => {
   return acc;
 }, {});
 const title = tag ? `标签：${tag}` : category ? `分类：${category}` : '文章归档';
+const description = tag || category ? `${title} 下的文章归档。` : `按时间浏览 ${SITE.title} 的已发布文章。`;
 ---
 
-<Layout title={`${title} | ${SITE.title}`}>
+<Layout title={`${title} | ${SITE.title}`} description={description} robots={tag || category ? 'noindex,follow' : undefined}>
   <Header />
   <main id="main-content" class="app-layout pb-10">
     <section class="surface-card mt-4 p-8">

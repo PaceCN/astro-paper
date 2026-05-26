@@ -81,6 +81,7 @@ const pubDatetime = new Date(post.createdAt);
 const modDatetime = post.updatedAt ? new Date(post.updatedAt) : null;
 const tags = String(post.tags || '').split(',').map(tag => tag.trim()).filter(Boolean);
 const description = post.description || post.content.replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 160);
+const canonicalURL = new URL(`/posts/${post.slug}/`, SITE.website);
 const unsafeHtml = await marked.parse(post.content);
 const content = sanitizeHtml(unsafeHtml, {
   allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'h3', 'h4', 'pre', 'code', 'video', 'source', 'track']),
@@ -101,6 +102,7 @@ const content = sanitizeHtml(unsafeHtml, {
 <Layout
   title={`${post.title} | ${SITE.title}`}
   description={description}
+  canonicalURL={canonicalURL}
   pubDatetime={pubDatetime}
   modDatetime={modDatetime}
   scrollSmooth={true}
