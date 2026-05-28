@@ -118,7 +118,7 @@ npm run db:remote
 ## 页面路由
 
 - `/`：首页
-- `/posts/`：文章列表
+- `/posts/`：重定向到 `/archive/`，减少重复入口
 - `/posts/:slug`：文章详情
 - `/archive/`：文章归档
 - `/search/`：站内搜索，不建议索引
@@ -134,21 +134,28 @@ npm run db:remote
 
 - 不提供 `/rss.xml`，`robots.txt` 会继续禁止抓取 RSS，避免订阅器和聚合器放大请求量。
 - `/sitemap-index.xml` 和 `/sitemap.xml` 由服务端生成，并设置 `public, max-age=3600, s-maxage=86400` 强缓存。
-- `/sitemap.xml` 会读取最多 50 篇已发布文章；如文章规模增加，需要改为分页 sitemap 或构建期生成。
+- `/sitemap.xml` 使用轻量字段读取最多 1000 篇已发布文章，不读取正文；文章规模继续增长后再拆分分页 sitemap。
 - 搜索页、后台页、后台登录页、404 页输出 `noindex,follow`。
 - `/archive/?tag=...` 和 `/archive/?category=...` 这类 query 参数页输出 `noindex,follow`，并由 `robots.txt` 的 `Disallow: /*?*` 保守限制抓取。
-- `robots.txt` 继续禁止 `/api/`、`/admin/`、`/login/`、`/search/`、`/*?*`、`/rss.xml`。
+- `robots.txt` 继续禁止 `/api/`、`/admin/`、`/login/`、`/search/`、`/*?*`、`/rss.xml`，并设置 `public, max-age=3600, s-maxage=86400` 缓存。
 
 ## API 路由
 
-- `GET /api/posts?status=published&pageSize=20`：读取已发布文章列表
-- `GET /api/posts/:slug`：读取单篇已发布文章
+公开读取接口会设置 Cloudflare 友好的 `Cache-Control`。其中公开文章列表默认返回轻量字段，不返回完整 `content`；文章详情接口仍返回正文。
+
+- `GET /api/posts?status=published&pageSize=20`：公开读取已发布文章列表，支持 `tag`、`category`、`page`、`pageSize`
+- `GET /api/posts/:slug`：公开读取单篇已发布文章
+- `GET /api/posts/:slug/comments`：公开读取已发布评论
+- `GET /api/meta`：公开读取站点统计、标签、分类和公开设置
+- `GET /api/settings`：公开读取前台需要的站点设置
+- `GET /api/related/:slug`：公开读取相关文章
+- `GET /api/ads`：公开读取广告位配置
 - `POST /api/auth/login`：后台登录
 - `POST /api/{BACKEND_ENTRY}/ai/posts`：AI token 专用创建文章
 - `POST /api/posts`：后台登录后创建文章
-- `PUT /api/posts/:id`：更新文章
-- `PATCH /api/posts/:id/status`：更新文章状态
-- `DELETE /api/posts/:id`：删除文章
+- `PUT /api/posts/:id`：后台登录后更新文章
+- `PATCH /api/posts/:id/status`：后台登录后更新文章状态
+- `DELETE /api/posts/:id`：后台登录后删除文章
 
 AI 创建文章示例：
 
@@ -174,9 +181,15 @@ Content-Type: application/json
 字段说明：
 
 - `title`：文章标题，必填。
-- `slug`：文章 URL 路径，建议使用英文、数字和短横线。
-- `status`：文章状态，可为 `published` 或 `hidden`。
+- `slug`：文章 URL 路径，建议使用英文、数字和短横线；留空时由标题生成。
+- `status`：文章状态，可为 `published` 或 `hidden`，但 AI 发文会受后台 AI 权限限制。
+- `category`：分类短文本，AI 是否可设置由 `ai_can_set_category` 控制。
+- `tags`：逗号分隔标签，AI 是否可设置由 `ai_can_set_tags` 控制。
+- `description`：文章摘要，建议填写；留空时会从正文截断生成。
+- `featured`：是否推荐，AI 是否可设置由 `ai_can_set_featured` 控制。
 - `content`：Markdown 正文，必填。
+
+如果 slug 已存在，创建接口会返回 `409`，不会覆盖已有文章；AI 定时任务遇到 409 应换 slug 或视为已存在后停止重试。
 
 ## 部署流程
 
@@ -243,3 +256,19 @@ npm run db:remote
 - 接口路径是否为 `/api/{BACKEND_ENTRY}/ai/posts`。
 - `Authorization` 是否为 `Bearer 你的 AI_API_TOKEN`。
 - 后台“AI 权限管理”是否允许 AI 创建文章。
+- 如果返回 `409`，说明 slug 已存在；接口不会覆盖已有文章。
+
+### Cloudflare 构建或依赖审计异常
+
+项目依赖保持 `latest` 以便长期获得上游修复，但 `package.json` 使用 `overrides` 固定少量兼容底座：
+
+- `vite` 固定为 `7.3.3`，避免 Astro/Cloudflare adapter 与 Vite 8 混装导致构建错误。
+- `@esbuild-kit/core-utils` 内部 `esbuild` 覆盖到安全版本，避免 `drizzle-kit` 旧 loader 链触发 audit 漏洞。
+
+依赖更新后建议按顺序验证：
+
+```sh
+npm ci
+npm audit
+npm run build
+```

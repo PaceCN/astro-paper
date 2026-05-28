@@ -307,36 +307,56 @@ const adSlots = [
           <section class="rounded border border-border p-4">
             <h2 class="text-xl font-semibold text-accent">后台与 API 使用说明</h2>
             <div class="app-prose mt-4 max-w-none text-sm">
-              <p>后台入口由 <code>BACKEND_ENTRY</code> 控制，AI 发文使用独立接口和 <code>AI_API_TOKEN</code>，不需要登录后台，也不使用 <code>JWT_SECRET</code>。</p>
-              <h3>AI 发文接口</h3>
-              <p>接口地址同时校验后台入口和 AI token。AI 权限由“AI 权限管理”页面控制。</p>
-              <pre><code set:html={`POST /api/${backendEntry}/ai/posts
-Authorization: Bearer 你的 AI_API_TOKEN
-Content-Type: application/json
+              <p>这页主要给 AI Agent 使用：复制下面的“发布任务说明”，连同文章选题或正文一起交给 Agent，让它只调用 AI 发文接口完成发布。</p>
+              <h3>给 AI Agent 的发布任务说明</h3>
+              <pre><code set:html={`你要向这个博客发布一篇文章。只允许调用 AI 发文接口，不要登录后台，不要调用后台 cookie 接口。
 
+接口：POST /api/${backendEntry}/ai/posts
+认证：Authorization: Bearer <AI_API_TOKEN>
+请求头：Content-Type: application/json
+
+请求体 JSON：
 {
-  &quot;title&quot;: &quot;文章标题&quot;,
-  &quot;slug&quot;: &quot;article-slug&quot;,
+  &quot;title&quot;: &quot;文章标题，必填&quot;,
+  &quot;slug&quot;: &quot;english-number-kebab-slug&quot;,
   &quot;status&quot;: &quot;hidden&quot;,
-  &quot;category&quot;: &quot;Cloudflare&quot;,
-  &quot;tags&quot;: &quot;Cloudflare,VPS,独立博客&quot;,
-  &quot;description&quot;: &quot;文章摘要，留空时会由正文自动生成。&quot;,
+  &quot;category&quot;: &quot;短分类名&quot;,
+  &quot;tags&quot;: &quot;标签1,标签2,标签3&quot;,
+  &quot;description&quot;: &quot;120-160 字左右的文章摘要&quot;,
   &quot;featured&quot;: false,
-  &quot;content&quot;: &quot;# Markdown 正文\n\n这里写文章内容。&quot;
-}`} /></pre>
+  &quot;content&quot;: &quot;# Markdown 正文\\n\\n这里写完整文章内容。&quot;
+}
+
+发布规则：
+1. title 和 content 必填，content 必须是完整 Markdown 正文。
+2. slug 使用小写英文、数字和短横线，保持稳定；不要使用中文、空格或随机串。
+3. 默认 status 使用 hidden，除非明确要求并且权限允许才使用 published。
+4. description 尽量填写，不要留空；category 保持短文本；tags 建议 3-6 个，用英文逗号分隔。
+5. 不要覆盖旧文章；如果接口返回 409，说明 slug 已存在，应换一个稳定 slug 或停止并报告已存在。
+6. 如果返回 401，检查 AI_API_TOKEN；如果返回 404，检查 BACKEND_ENTRY；如果返回 403，说明 AI 权限未开启或受限。
+7. 请求成功后读取返回 JSON，确认 success=true，并报告最终保存的 status、slug 和文章链接 /posts/{slug}/。`} /></pre>
+              <h3>AI 发文接口细节</h3>
+              <p>接口地址同时校验后台入口和 AI token。AI 权限由“AI 权限管理”页面控制。</p>
               <ul>
                 <li><code>title</code> 和 <code>content</code> 必填。</li>
-                <li><code>slug</code> 可选，留空时由标题生成。</li>
+                <li><code>slug</code> 可选，留空时由标题生成；推荐由 Agent 主动生成稳定英文短横线 slug。</li>
                 <li><code>status</code> 可为 <code>hidden</code> 或 <code>published</code>，但会受 AI 权限限制。</li>
+                <li><code>category</code>、<code>tags</code>、<code>featured</code> 分别受对应 AI 权限控制。</li>
+                <li><code>description</code> 建议填写，留空时会从正文截断生成。</li>
                 <li>如果未允许 AI 直接发布，即使传入 <code>published</code> 也会按默认状态保存。</li>
+                <li>如果 slug 已存在，接口返回 <code>409</code>，不会覆盖已有文章。</li>
               </ul>
-              <h3>后台接口</h3>
+              <h3>可用于发布后核验的公开读取接口</h3>
+              <p>公开读取接口会设置 Cloudflare 缓存头；文章列表默认返回轻量字段，不返回完整正文。</p>
               <ul>
-                <li><code>GET /api/posts?status=published&amp;pageSize=20</code>：公开读取已发布文章。</li>
-                <li><code>POST /api/posts</code>：人类后台登录后创建文章。</li>
-                <li><code>PUT /api/posts/:id</code>：人类后台登录后更新文章。</li>
-                <li><code>PATCH /api/posts/:id/status</code>：人类后台登录后发布或隐藏文章。</li>
-                <li><code>DELETE /api/posts/:id</code>：人类后台登录后删除文章。</li>
+                <li><code>GET /api/posts/:slug</code>：读取单篇已发布文章，包含正文；hidden 文章不会公开返回。</li>
+                <li><code>GET /api/posts?status=published&amp;pageSize=20</code>：读取已发布文章列表，支持 <code>page</code>、<code>tag</code>、<code>category</code>。</li>
+                <li><code>GET /api/meta</code>：读取站点统计、标签、分类和公开设置。</li>
+              </ul>
+              <h3>不要让 Agent 调用的接口</h3>
+              <ul>
+                <li><code>POST /api/auth/login</code>：这是人工后台登录，不给 Agent 使用。</li>
+                <li><code>POST /api/posts</code>、<code>PUT /api/posts/:id</code>、<code>PATCH /api/posts/:id/status</code>、<code>DELETE /api/posts/:id</code>：这些是后台 cookie 写接口，不给 Agent 使用。</li>
               </ul>
             </div>
           </section>

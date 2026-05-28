@@ -30,5 +30,11 @@
     "@types/sanitize-html": "latest",
     "drizzle-kit": "latest",
     "wrangler": "latest"
+  },
+  "overrides": {
+    "vite": "7.3.3",
+    "@esbuild-kit/core-utils": {
+      "esbuild": "^0.25.12"
+    }
   }
 }
