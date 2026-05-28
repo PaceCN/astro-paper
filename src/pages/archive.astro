@@ -1,9 +1,12 @@
 ---
+import { env } from 'cloudflare:workers';
 import Layout from '@/layouts/Layout.astro';
 import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
 import PostCard from '@/components/PostCard.astro';
 import { SITE } from '@/config';
+import { getPublicPosts } from '@/lib/content-service';
+import { getDb } from '@/lib/db';
 
 type Post = {
   id: number;
@@ -23,12 +26,9 @@ const category = Astro.url.searchParams.get('category') || '';
 let posts: Post[] = [];
 
 try {
-  const params = new URLSearchParams({ status: 'published', pageSize: '50' });
-  if (tag) params.set('tag', tag);
-  if (category) params.set('category', category);
-  const response = await fetch(new URL(`/api/posts?${params.toString()}`, Astro.url));
-  const result = await response.json() as { success: boolean; data?: { posts: Post[] } };
-  posts = result.data?.posts ?? [];
+  const db = getDb(env.DB);
+  posts = (await getPublicPosts(db, { pageSize: 50, tag, category })).posts as Post[];
+  Astro.response.headers.set('Cache-Control', tag || category ? 'public, max-age=60, s-maxage=300, stale-while-revalidate=3600' : 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
 } catch {
   posts = [];
 }

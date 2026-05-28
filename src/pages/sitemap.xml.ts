@@ -1,5 +1,8 @@
+import { env } from 'cloudflare:workers';
 import type { APIRoute } from 'astro';
 import { SITE } from '@/config';
+import { getPublicPosts } from '@/lib/content-service';
+import { getDb } from '@/lib/db';
 
 type Post = {
   slug: string;
@@ -23,14 +26,12 @@ function urlEntry(loc: URL, lastmod?: Date) {
   </url>`;
 }
 
-export const GET: APIRoute = async ({ site, url }) => {
+export const GET: APIRoute = async ({ site }) => {
   const baseURL = site?.href ?? SITE.website;
   let posts: Post[] = [];
 
   try {
-    const response = await fetch(new URL('/api/posts?status=published&pageSize=50', url));
-    const result = await response.json() as { success: boolean; data?: { posts: Post[] } };
-    posts = result.data?.posts ?? [];
+    posts = (await getPublicPosts(getDb(env.DB), { pageSize: 1000 })).posts as Post[];
   } catch {
     posts = [];
   }

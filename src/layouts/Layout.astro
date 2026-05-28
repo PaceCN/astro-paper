@@ -14,6 +14,8 @@ type Props = {
   canonicalURL?: string | URL;
   pubDatetime?: Date;
   modDatetime?: Date | null;
+  keywords?: string[];
+  articleSection?: string;
   robots?: string;
   scrollSmooth?: boolean;
 };
@@ -27,6 +29,8 @@ const {
   canonicalURL = new URL(Astro.url.pathname, SITE.website),
   pubDatetime,
   modDatetime,
+  keywords = [],
+  articleSection,
   robots,
   scrollSmooth = false,
 } = Astro.props;
@@ -42,8 +46,15 @@ const structuredData = pubDatetime
       description,
       image: `${socialImageURL}`,
       url: `${canonical}`,
+      mainEntityOfPage: `${canonical}`,
       datePublished: pubDatetime.toISOString(),
-      ...(modDatetime && { dateModified: modDatetime.toISOString() }),
+      dateModified: (modDatetime ?? pubDatetime).toISOString(),
+      publisher: {
+        "@type": "Organization",
+        name: SITE.title,
+      },
+      ...(keywords.length && { keywords }),
+      ...(articleSection && { articleSection }),
       author: [
         {
           "@type": "Person",

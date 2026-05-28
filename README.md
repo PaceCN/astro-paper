@@ -120,10 +120,24 @@ npm run db:remote
 - `/`：首页
 - `/posts/`：文章列表
 - `/posts/:slug`：文章详情
-- `/{BACKEND_ENTRY}/login`：后台登录
-- `/{BACKEND_ENTRY}`：后台管理
+- `/archive/`：文章归档
+- `/search/`：站内搜索，不建议索引
+- `/robots.txt`：爬虫访问规则
+- `/sitemap-index.xml`：sitemap 索引
+- `/sitemap.xml`：首页、静态内容页和已发布文章 sitemap
+- `/{BACKEND_ENTRY}/login`：后台登录，不建议索引
+- `/{BACKEND_ENTRY}`：后台管理，不建议索引
 
 `/login` 和 `/admin` 不是后台入口，会跳回首页。
+
+## SEO 与爬虫策略
+
+- 不提供 `/rss.xml`，`robots.txt` 会继续禁止抓取 RSS，避免订阅器和聚合器放大请求量。
+- `/sitemap-index.xml` 和 `/sitemap.xml` 由服务端生成，并设置 `public, max-age=3600, s-maxage=86400` 强缓存。
+- `/sitemap.xml` 会读取最多 50 篇已发布文章；如文章规模增加，需要改为分页 sitemap 或构建期生成。
+- 搜索页、后台页、后台登录页、404 页输出 `noindex,follow`。
+- `/archive/?tag=...` 和 `/archive/?category=...` 这类 query 参数页输出 `noindex,follow`，并由 `robots.txt` 的 `Disallow: /*?*` 保守限制抓取。
+- `robots.txt` 继续禁止 `/api/`、`/admin/`、`/login/`、`/search/`、`/*?*`、`/rss.xml`。
 
 ## API 路由
 

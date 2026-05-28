@@ -1,4 +1,5 @@
 ---
+import { env } from 'cloudflare:workers';
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
 import Layout from '@/layouts/Layout.astro';
@@ -12,6 +13,8 @@ import ShareLinks from '@/components/ShareLinks.astro';
 import RelatedPosts from '@/components/RelatedPosts.astro';
 import Comments from '@/components/Comments.astro';
 import { SITE } from '@/config';
+import { getAdSlots, getPublishedCommentsBySlug, getPublicPostBySlug, getPublicSettings, getRelatedPosts } from '@/lib/content-service';
+import { getDb } from '@/lib/db';
 
 type Post = {
   id: number;
@@ -40,42 +43,25 @@ let related: Post[] = [];
 let comments: Comment[] = [];
 let commentsEnabled = true;
 let tagsEnabled = true;
+let adSlots = [];
 
 try {
-  const response = await fetch(new URL(`/api/posts/${slug}`, Astro.url));
-  const result = await response.json() as { success: boolean; data?: { post: Post } };
-  post = result.data?.post;
+  const db = getDb(env.DB);
+  post = await getPublicPostBySlug(db, slug || '') as Post | undefined;
+  if (post) {
+    const publicConfig = await getPublicSettings(db);
+    commentsEnabled = publicConfig.settings.commentsEnabled;
+    tagsEnabled = publicConfig.settings.tagsEnabled;
+    related = await getRelatedPosts(db, post.slug) as Post[] ?? [];
+    comments = await getPublishedCommentsBySlug(db, post.slug) as Comment[] ?? [];
+    adSlots = await getAdSlots(db);
+    Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=600, stale-while-revalidate=3600');
+  }
 } catch {
   post = undefined;
 }
 
 if (!post) return Astro.redirect('/');
-
-try {
-  const settingsResponse = await fetch(new URL('/api/settings', Astro.url));
-  const settingsResult = await settingsResponse.json() as { success: boolean; data?: { settings: { commentsEnabled: boolean; tagsEnabled: boolean } } };
-  commentsEnabled = settingsResult.data?.settings.commentsEnabled ?? true;
-  tagsEnabled = settingsResult.data?.settings.tagsEnabled ?? true;
-} catch {
-  commentsEnabled = true;
-  tagsEnabled = true;
-}
-
-try {
-  const relatedResponse = await fetch(new URL(`/api/related/${post.slug}`, Astro.url));
-  const relatedResult = await relatedResponse.json() as { success: boolean; data?: { posts: Post[] } };
-  related = relatedResult.data?.posts ?? [];
-} catch {
-  related = [];
-}
-
-try {
-  const commentsResponse = await fetch(new URL(`/api/posts/${post.slug}/comments`, Astro.url));
-  const commentsResult = await commentsResponse.json() as { success: boolean; data?: { comments: Comment[] } };
-  comments = commentsResult.data?.comments ?? [];
-} catch {
-  comments = [];
-}
 
 const pubDatetime = new Date(post.createdAt);
 const modDatetime = post.updatedAt ? new Date(post.updatedAt) : null;
@@ -105,6 +91,8 @@ const content = sanitizeHtml(unsafeHtml, {
   canonicalURL={canonicalURL}
   pubDatetime={pubDatetime}
   modDatetime={modDatetime}
+  keywords={tags}
+  articleSection={post.category || '随笔'}
   scrollSmooth={true}
 >
   <Header />
@@ -128,7 +116,7 @@ const content = sanitizeHtml(unsafeHtml, {
       {description && <p class="mt-6 max-w-3xl text-base leading-7 text-subtle">{description}</p>}
     </article>
 
-    <AdSlot position="content_top" class="mt-6" />
+    <AdSlot position="content_top" class="mt-6" adSlots={adSlots} />
 
     <article
       id="article"
@@ -136,7 +124,7 @@ const content = sanitizeHtml(unsafeHtml, {
       set:html={content}
     />
 
-    <AdSlot position="content_bottom" class="mt-6" />
+    <AdSlot position="content_bottom" class="mt-6" adSlots={adSlots} />
     <RelatedPosts posts={related} tagsEnabled={tagsEnabled} />
     <Comments slug={post.slug} comments={comments} enabled={commentsEnabled} />
     <div class="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">

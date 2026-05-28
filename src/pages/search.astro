@@ -1,29 +1,30 @@
 ---
+import { env } from 'cloudflare:workers';
 import Layout from '@/layouts/Layout.astro';
 import Main from '@/layouts/Main.astro';
 import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
 import Datetime from '@/components/Datetime.astro';
 import { SITE } from '@/config';
+import { getPublicPosts } from '@/lib/content-service';
+import { getDb } from '@/lib/db';
 
 type Post = {
   id: number;
   title: string;
   slug: string;
-  content: string;
+  description?: string;
+  tags?: string;
+  category?: string;
   createdAt: string | number;
 };
 
 let posts: Post[] = [];
 
-function excerpt(content: string) {
-  return content.replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 140);
-}
-
 try {
-  const response = await fetch(new URL('/api/posts?status=published&pageSize=50', Astro.url));
-  const result = await response.json() as { success: boolean; data?: { posts: Post[] } };
-  posts = result.data?.posts ?? [];
+  const db = getDb(env.DB);
+  posts = (await getPublicPosts(db, { pageSize: 50 })).posts as Post[];
+  Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
 } catch {
   posts = [];
 }
@@ -31,7 +32,7 @@ try {
 
 <Layout title={`搜索 | ${SITE.title}`} robots="noindex,follow">
   <Header />
-  <Main pageTitle="搜索" pageDesc="按标题、slug 和正文内容搜索已发布文章。">
+  <Main pageTitle="搜索" pageDesc="按标题、slug、摘要、分类和标签搜索已发布文章。">
     <div class="space-y-5">
       <label class="block">
         <span class="mb-2 block text-sm text-muted-foreground">搜索关键词</span>
@@ -46,7 +47,7 @@ try {
       <p id="search-summary" class="text-sm text-muted-foreground">共 {posts.length} 篇已发布文章。</p>
       <ul id="search-results" class="space-y-5">
         {posts.map(post => (
-          <li class="search-item rounded border border-border p-4" data-search={`${post.title} ${post.slug} ${post.content}`.toLowerCase()}>
+          <li class="search-item rounded border border-border p-4" data-search={`${post.title} ${post.slug} ${post.description || ''} ${post.tags || ''} ${post.category || ''}`.toLowerCase()}>
             <a
               href={`/posts/${post.slug}/`}
               class="inline-block text-lg font-medium text-accent decoration-dashed underline-offset-4 hover:underline"
@@ -54,7 +55,7 @@ try {
               <h2>{post.title}</h2>
             </a>
             <Datetime pubDatetime={new Date(post.createdAt)} />
-            <p>{excerpt(post.content)}{post.content.length > 140 ? '...' : ''}</p>
+            <p>{post.description || '暂无摘要。'}</p>
           </li>
         ))}
       </ul>

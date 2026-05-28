@@ -1,11 +1,27 @@
 import { env } from 'cloudflare:workers';
-import { and, desc, eq, like, ne, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { Hono, type Context } from 'hono';
 import type { APIContext } from 'astro';
 import { adPositions, adSlots, comments, posts, siteSettings, type AdPosition } from '../../db/schema';
 import { clearSessionCookie, createSession, getSessionCookie, sessionCookie, verifySession } from '../../lib/auth';
+import {
+  defaultSettings,
+  getAdSlots,
+  getAllPosts,
+  getPublishedCommentsBySlug,
+  getPublicMeta,
+  getPublicPostBySlug,
+  getPublicPosts,
+  getPublicSettings,
+  getRelatedPosts,
+  getSettings,
+  normalizePage,
+  normalizePageSize,
+  publicSettings,
+  settingEnabled
+} from '../../lib/content-service';
 import { getDb } from '../../lib/db';
-import { fail, ok } from '../../lib/response';
+import { apiCache, cachedOk, fail, ok } from '../../lib/response';
 
 type Bindings = {
   DB: D1Database;
@@ -38,59 +54,6 @@ function normalizeList(value: unknown) {
 
 function plainText(value: string) {
   return value.replace(/[#>*_\[\]`-]/g, '').replace(/\s+/g, ' ').trim();
-}
-
-const defaultSettings = {
-  comments_enabled: 'true',
-  site_title: '',
-  site_desc: '',
-  site_intro: '',
-  site_author: '',
-  site_profile: '',
-  site_avatar: '',
-  sidebar_profile: 'true',
-  sidebar_tags: 'true',
-  sidebar_categories: 'true',
-  sidebar_stack: 'true',
-  tags_enabled: 'true',
-  tech_stack: 'Astro,Tailwind,Cloudflare,D1,Hono,Drizzle',
-  ai_can_create_post: 'true',
-  ai_can_publish_post: 'false',
-  ai_can_set_featured: 'false',
-  ai_can_set_category: 'true',
-  ai_can_set_tags: 'true',
-  ai_default_status: 'hidden'
-};
-
-async function getSettings(db: ReturnType<typeof getDb>) {
-  const rows = await db.query.siteSettings.findMany();
-  return { ...defaultSettings, ...Object.fromEntries(rows.map(row => [row.key, row.value])) };
-}
-
-function settingEnabled(settings: Record<string, string>, key: keyof typeof defaultSettings) {
-  return settings[key] !== 'false';
-}
-
-function publicSettings(settings: Record<string, string>) {
-  return {
-    commentsEnabled: settingEnabled(settings, 'comments_enabled'),
-    tagsEnabled: settingEnabled(settings, 'tags_enabled'),
-    site: {
-      title: settings.site_title,
-      desc: settings.site_desc,
-      intro: settings.site_intro,
-      author: settings.site_author,
-      profile: settings.site_profile,
-      avatar: settings.site_avatar,
-    },
-    sidebar: {
-      profile: settingEnabled(settings, 'sidebar_profile'),
-      tags: settingEnabled(settings, 'sidebar_tags'),
-      categories: settingEnabled(settings, 'sidebar_categories'),
-      stack: settingEnabled(settings, 'sidebar_stack'),
-    },
-    techStack: settings.tech_stack.split(/[，,\n]/).map(item => item.trim()).filter(Boolean)
-  };
 }
 
 async function readJson(c: Context<{ Bindings: Bindings }>) {
@@ -148,38 +111,36 @@ app.post('/:backendEntry/ai/posts', async (c) => {
 app.get('/posts', async (c) => {
   const db = getDb(c.env.DB);
   const status = c.req.query('status');
-  const tag = c.req.query('tag')?.trim();
-  const category = c.req.query('category')?.trim();
-  const page = Math.max(Number(c.req.query('page') ?? '1'), 1);
-  const pageSize = Math.min(Math.max(Number(c.req.query('pageSize') ?? '10'), 1), 50);
-  const filters = [status === 'published' || status === 'hidden' ? eq(posts.status, status) : undefined, tag ? like(posts.tags, `%${tag}%`) : undefined, category ? eq(posts.category, category) : undefined].filter(Boolean);
-  const where = filters.length ? and(...filters) : undefined;
-  const data = await db.query.posts.findMany({
-    where,
-    orderBy: (table, { desc }) => desc(table.createdAt),
-    limit: pageSize,
-    offset: (page - 1) * pageSize
-  });
-  return ok(c, '获取文章列表成功', { posts: data, page, pageSize });
+  const page = normalizePage(c.req.query('page'));
+  const pageSize = normalizePageSize(c.req.query('pageSize'));
+
+  if (status === 'published') {
+    const data = await getPublicPosts(db, {
+      page,
+      pageSize,
+      tag: c.req.query('tag'),
+      category: c.req.query('category'),
+      includeContent: c.req.query('includeContent') === 'true'
+    });
+    return cachedOk(c, apiCache.publicList, '获取文章列表成功', data);
+  }
+
+  const data = await getAllPosts(db, { page, pageSize, status });
+  return ok(c, '获取文章列表成功', data);
 });
 
 app.get('/posts/:slug', async (c) => {
   const db = getDb(c.env.DB);
-  const post = await db.query.posts.findFirst({ where: eq(posts.slug, c.req.param('slug')) });
-  if (!post || post.status !== 'published') return fail(c, '文章不存在', 404);
-  return ok(c, '获取文章成功', { post });
+  const post = await getPublicPostBySlug(db, c.req.param('slug'));
+  if (!post) return fail(c, '文章不存在', 404);
+  return cachedOk(c, apiCache.publicDetail, '获取文章成功', { post });
 });
 
 app.get('/posts/:slug/comments', async (c) => {
   const db = getDb(c.env.DB);
-  const post = await db.query.posts.findFirst({ where: eq(posts.slug, c.req.param('slug')) });
-  if (!post || post.status !== 'published') return fail(c, '文章不存在', 404);
-  const data = await db.query.comments.findMany({
-    where: and(eq(comments.postId, post.id), eq(comments.status, 'published')),
-    orderBy: (table, { asc }) => asc(table.createdAt),
-    limit: 100
-  });
-  return ok(c, '获取评论成功', { comments: data.map(comment => ({ id: comment.id, author: comment.author, content: comment.content, createdAt: comment.createdAt })) });
+  const data = await getPublishedCommentsBySlug(db, c.req.param('slug'));
+  if (!data) return fail(c, '文章不存在', 404);
+  return cachedOk(c, apiCache.publicComments, '获取评论成功', { comments: data });
 });
 
 app.post('/posts/:slug/comments', async (c) => {
@@ -215,6 +176,9 @@ async function createPost(c: Context<{ Bindings: Bindings }>, options: { ai?: bo
   const featured = options.ai && !settingEnabled(settings!, 'ai_can_set_featured') ? false : Boolean(body?.featured);
   const slug = slugify(requestedSlug || title);
   if (!title || !slug || !content) return fail(c, '标题、slug 和内容不能为空', 400);
+
+  const existing = await db.query.posts.findFirst({ where: eq(posts.slug, slug) });
+  if (existing) return fail(c, 'slug 已存在，请更换后重试', 409);
 
   const inserted = await db.insert(posts).values({ title, slug, content, description, tags, category, featured, status }).returning();
   return ok(c, options.ai ? 'AI 文章创建成功' : '文章创建成功', inserted[0], 201);
@@ -272,8 +236,7 @@ app.delete('/posts/:id', async (c) => {
 
 app.get('/settings', async (c) => {
   const db = getDb(c.env.DB);
-  const settings = await getSettings(db);
-  return ok(c, '获取站点设置成功', { settings: publicSettings(settings), raw: settings });
+  return cachedOk(c, apiCache.publicShort, '获取站点设置成功', await getPublicSettings(db));
 });
 
 app.put('/settings', async (c) => {
@@ -323,67 +286,19 @@ app.delete('/comments/:id', async (c) => {
 
 app.get('/meta', async (c) => {
   const db = getDb(c.env.DB);
-  const settings = await getSettings(db);
-  const publishedPosts = await db.query.posts.findMany({ where: eq(posts.status, 'published'), orderBy: (table, { desc }) => desc(table.createdAt), limit: 50 });
-  const tagCounts = new Map<string, number>();
-  const categoryCounts = new Map<string, number>();
-  for (const post of publishedPosts) {
-    const category = post.category || '随笔';
-    categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
-    for (const tag of post.tags.split(',').map(item => item.trim()).filter(Boolean)) {
-      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
-    }
-  }
-  return ok(c, '获取站点统计成功', {
-    totalPosts: publishedPosts.length,
-    tags: [...tagCounts.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
-    categories: [...categoryCounts.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
-    settings: publicSettings(settings)
-  });
+  return cachedOk(c, apiCache.publicShort, '获取站点统计成功', await getPublicMeta(db));
 });
 
 app.get('/related/:slug', async (c) => {
   const db = getDb(c.env.DB);
-  const post = await db.query.posts.findFirst({ where: eq(posts.slug, c.req.param('slug')) });
-  if (!post || post.status !== 'published') return fail(c, '文章不存在', 404);
-  const firstTag = post.tags.split(',').map(item => item.trim()).filter(Boolean)[0];
-  const related = await db.query.posts.findMany({
-    where: and(eq(posts.status, 'published'), ne(posts.slug, post.slug), firstTag ? like(posts.tags, `%${firstTag}%`) : eq(posts.category, post.category)),
-    orderBy: [desc(posts.featured), desc(posts.createdAt)],
-    limit: 3
-  });
-  const fallback = related.length >= 3 ? [] : await db.query.posts.findMany({
-    where: and(eq(posts.status, 'published'), ne(posts.slug, post.slug)),
-    orderBy: (table, { desc }) => desc(table.createdAt),
-    limit: 3 - related.length
-  });
-  const seen = new Set<string>();
-  const postsData = [...related, ...fallback].filter(item => {
-    if (seen.has(item.slug)) return false;
-    seen.add(item.slug);
-    return true;
-  }).slice(0, 3);
-  return ok(c, '获取相关推荐成功', { posts: postsData });
+  const postsData = await getRelatedPosts(db, c.req.param('slug'));
+  if (!postsData) return fail(c, '文章不存在', 404);
+  return cachedOk(c, apiCache.publicRelated, '获取相关推荐成功', { posts: postsData });
 });
 
 app.get('/ads', async (c) => {
   const db = getDb(c.env.DB);
-  const data = await db.query.adSlots.findMany({ orderBy: (table) => sql`instr('header_bottom,content_top,content_bottom,footer_top', ${table.position})` });
-  const byPosition = new Map(data.map((slot) => [slot.position, slot]));
-  const normalized = adPositions.map((position) => {
-    const slot = byPosition.get(position);
-    const adCode = slot?.adCode ?? '';
-    const isEnabled = Boolean(slot?.isEnabled);
-    return {
-      id: slot?.id ?? 0,
-      position,
-      adCode,
-      ad_code: adCode,
-      isEnabled,
-      is_enabled: isEnabled
-    };
-  });
-  return ok(c, '获取广告位成功', { adSlots: normalized });
+  return cachedOk(c, apiCache.publicShort, '获取广告位成功', { adSlots: await getAdSlots(db) });
 });
 
 app.put('/ads/:position', async (c) => {

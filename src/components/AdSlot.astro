@@ -15,6 +15,7 @@ type Props = {
   slot?: SlotName;
   position?: AdPosition;
   class?: string;
+  adSlots?: AdSlot[];
 };
 
 const slotPositionMap: Record<AstroPaperSlot, AdPosition> = {
@@ -25,18 +26,10 @@ const slotPositionMap: Record<AstroPaperSlot, AdPosition> = {
   postBottom: 'content_bottom'
 };
 
-const { slot, position, class: className = '' } = Astro.props as Props;
+const { slot, position, class: className = '', adSlots = [] } = Astro.props as Props;
 const requestedSlot = slot ?? position ?? 'content_bottom';
 const adPosition = requestedSlot in slotPositionMap ? slotPositionMap[requestedSlot as AstroPaperSlot] : requestedSlot as AdPosition;
-let adSlot: AdSlot | undefined;
-
-try {
-  const response = await fetch(new URL('/api/ads', Astro.url));
-  const result = await response.json() as { success: boolean; data?: { adSlots: AdSlot[] } };
-  adSlot = result.data?.adSlots.find((item) => item.position === adPosition);
-} catch {
-  adSlot = undefined;
-}
+const adSlot = adSlots.find((item) => item.position === adPosition);
 
 const adCode = (adSlot?.adCode ?? adSlot?.ad_code ?? '').trim();
 const isEnabled = Boolean(adSlot?.isEnabled ?? adSlot?.is_enabled);

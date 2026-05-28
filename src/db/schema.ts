@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const adPositions = ['header_bottom', 'content_top', 'content_bottom', 'footer_top'] as const;
 export type AdPosition = (typeof adPositions)[number];
@@ -32,7 +32,11 @@ export const posts = sqliteTable(
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date())
   },
-  (table) => [uniqueIndex('posts_slug_unique').on(table.slug)]
+  (table) => [
+    uniqueIndex('posts_slug_unique').on(table.slug),
+    index('posts_status_created_at_idx').on(table.status, table.createdAt),
+    index('posts_status_category_created_at_idx').on(table.status, table.category, table.createdAt)
+  ]
 );
 
 export const adSlots = sqliteTable(
@@ -46,15 +50,22 @@ export const adSlots = sqliteTable(
   (table) => [uniqueIndex('ad_slots_position_unique').on(table.position)]
 );
 
-export const comments = sqliteTable('comments', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  postId: integer('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
-  author: text('author').notNull(),
-  email: text('email').notNull().default(''),
-  content: text('content').notNull(),
-  status: text('status', { enum: commentStatuses }).notNull().default('pending'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date())
-});
+export const comments = sqliteTable(
+  'comments',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    postId: integer('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
+    author: text('author').notNull(),
+    email: text('email').notNull().default(''),
+    content: text('content').notNull(),
+    status: text('status', { enum: commentStatuses }).notNull().default('pending'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date())
+  },
+  (table) => [
+    index('comments_post_status_created_at_idx').on(table.postId, table.status, table.createdAt),
+    index('comments_status_created_at_idx').on(table.status, table.createdAt)
+  ]
+);
 
 export const siteVisits = sqliteTable(
   'site_visits',
