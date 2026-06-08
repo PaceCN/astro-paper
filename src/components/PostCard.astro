@@ -11,7 +11,6 @@ type Post = {
   tags?: string;
   category?: string;
   featured?: boolean;
-  viewCount?: number;
 };
 
 type Props = {
@@ -31,7 +30,6 @@ const date = post.createdAt ? new Date(post.createdAt) : new Date();
     <div class="flex flex-wrap items-center gap-2 text-xs text-subtle">
       <span class="chip border-accent/30 text-accent">{post.category || '随笔'}</span>
       {post.featured && <span class="chip">推荐</span>}
-      <span>{Number(post.viewCount || 0)} 次阅读</span>
     </div>
     <h2 class:list={['font-semibold leading-snug text-foreground group-hover:text-accent', compact ? 'text-base' : 'text-xl']}>
       {post.title}

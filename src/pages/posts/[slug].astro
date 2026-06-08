@@ -8,10 +8,12 @@ import Footer from '@/components/Footer.astro';
 import Datetime from '@/components/Datetime.astro';
 import AdSlot from '@/components/AdSlot.astro';
 import BackButton from '@/components/BackButton.astro';
-import BackToTopButton from '@/components/BackToTopButton.astro';
 import ShareLinks from '@/components/ShareLinks.astro';
 import RelatedPosts from '@/components/RelatedPosts.astro';
 import Comments from '@/components/Comments.astro';
+import IconArrowNarrowUp from '@/assets/icons/IconArrowNarrowUp.svg';
+import IconHash from '@/assets/icons/IconHash.svg';
+import IconX from '@/assets/icons/IconX.svg';
 import { SITE } from '@/config';
 import { getAdSlots, getPublishedCommentsBySlug, getPublicPostBySlug, getPublicSettings, getRelatedPosts } from '@/lib/content-service';
 import { getDb } from '@/lib/db';
@@ -25,7 +27,6 @@ type Post = {
   tags?: string;
   category?: string;
   featured?: boolean;
-  viewCount?: number;
   createdAt: string | number;
   updatedAt?: string | number;
 };
@@ -102,7 +103,6 @@ const content = sanitizeHtml(unsafeHtml, {
       <div class="mb-6 flex flex-wrap items-center gap-2 text-sm text-subtle">
         <a class="chip border-accent/30 text-accent" href={`/archive/?category=${encodeURIComponent(post.category || '随笔')}`}>{post.category || '随笔'}</a>
         {post.featured && <span class="chip">推荐</span>}
-        <span>{Number(post.viewCount || 0)} 次阅读</span>
       </div>
       <h1 class="max-w-4xl text-3xl font-bold leading-tight text-foreground sm:text-5xl">{post.title}</h1>
       <div class="mt-5 flex flex-wrap items-center gap-4 text-subtle">
@@ -118,19 +118,368 @@ const content = sanitizeHtml(unsafeHtml, {
 
     <AdSlot position="content_top" class="mt-6" adSlots={adSlots} />
 
-    <article
-      id="article"
-      class="app-prose surface-card mt-6 w-full p-6 sm:p-8 prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
-      set:html={content}
-    />
+    <div class="article-reading-grid mt-6">
+      <article
+        id="article"
+        class="app-prose surface-card w-full p-6 sm:p-8 prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
+        set:html={content}
+      />
+
+      <aside id="article-toc-sidebar" class="article-toc-sidebar" aria-label="文章目录" data-pagefind-ignore hidden>
+        <div class="article-toc-card">
+          <div class="article-toc-heading">
+            <IconHash class="size-4" />
+            <span>文章目录</span>
+          </div>
+          <nav id="article-toc-list" class="article-toc-list" aria-label="文章目录"></nav>
+        </div>
+      </aside>
+    </div>
 
     <AdSlot position="content_bottom" class="mt-6" adSlots={adSlots} />
     <RelatedPosts posts={related} tagsEnabled={tagsEnabled} />
     <Comments slug={post.slug} comments={comments} enabled={commentsEnabled} />
     <div class="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
-      <BackToTopButton />
       <ShareLinks />
     </div>
   </main>
+
+  <div id="article-toc-backdrop" class="article-toc-backdrop" hidden></div>
+  <aside id="article-toc-drawer" class="article-toc-drawer" aria-label="文章目录" aria-hidden="true" data-pagefind-ignore>
+    <div class="article-toc-drawer-header">
+      <div class="article-toc-heading">
+        <IconHash class="size-4" />
+        <span>文章目录</span>
+      </div>
+      <button class="article-panel-button" data-article-action="close-toc" type="button" aria-label="关闭目录">
+        <IconX class="size-4" />
+      </button>
+    </div>
+    <nav id="article-toc-drawer-list" class="article-toc-list" aria-label="文章目录"></nav>
+  </aside>
+
+  <div id="article-actions" class="article-actions" aria-label="文章操作" data-pagefind-ignore>
+    <span class="article-progress" aria-hidden="true"><span id="article-progress-bar"></span></span>
+    <button class="article-action-button xl:hidden" data-article-action="toggle-toc" type="button" title="文章目录" aria-label="打开文章目录" aria-controls="article-toc-drawer" aria-expanded="false">
+      <IconHash class="size-5" />
+    </button>
+    <button class="article-action-button" data-article-action="top" type="button" title="回到顶部" aria-label="回到顶部">
+      <IconArrowNarrowUp class="size-5" />
+    </button>
+  </div>
+
   <Footer />
 </Layout>
+
+<script data-astro-rerun>
+  function getCodeLanguage(code) {
+    const match = String(code.className || '').match(/language-([a-z0-9_-]+)/i);
+    return match ? match[1].replace(/-/g, ' ') : '代码';
+  }
+
+  function copyWithFallback(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.inset = '0 auto auto 0';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    try {
+      if (!document.execCommand('copy')) throw new Error('Copy failed');
+      return Promise.resolve();
+    } finally {
+      textarea.remove();
+    }
+  }
+
+  async function copyCodeText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    await copyWithFallback(text);
+  }
+
+  function enhanceCodeBlocks() {
+    document.querySelectorAll('#article pre').forEach(preElement => {
+      const pre = preElement;
+      if (pre.dataset.copyEnhanced === 'true') return;
+
+      const code = pre.querySelector(':scope > code');
+      if (!code) return;
+
+      pre.dataset.copyEnhanced = 'true';
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'code-block';
+
+      const header = document.createElement('div');
+      header.className = 'code-block-header';
+
+      const lang = document.createElement('span');
+      lang.className = 'code-block-lang';
+      lang.textContent = getCodeLanguage(code);
+
+      const actions = document.createElement('div');
+      actions.className = 'code-block-actions';
+
+      const message = document.createElement('span');
+      message.className = 'code-copy-message';
+      message.setAttribute('aria-live', 'polite');
+
+      const button = document.createElement('button');
+      button.className = 'copy-code-button';
+      button.type = 'button';
+      button.title = '复制代码';
+      button.setAttribute('aria-label', '复制代码');
+
+      const label = document.createElement('span');
+      label.className = 'code-copy-label';
+      label.textContent = '复制代码';
+      button.append(label);
+
+      actions.append(message, button);
+      header.append(lang, actions);
+
+      pre.parentNode?.insertBefore(wrapper, pre);
+      wrapper.append(header, pre);
+
+      button.addEventListener('click', async () => {
+        button.disabled = true;
+        button.classList.remove('is-copied', 'is-error');
+        message.textContent = '';
+
+        try {
+          await copyCodeText(code.textContent || '');
+          button.classList.add('is-copied');
+          message.textContent = '已复制';
+        } catch {
+          button.classList.add('is-error');
+          message.textContent = '复制失败';
+        } finally {
+          window.setTimeout(() => {
+            button.disabled = false;
+            button.classList.remove('is-copied', 'is-error');
+            message.textContent = '';
+          }, 1600);
+        }
+      });
+    });
+  }
+
+  function normalizeHeadingId(text, usedIds) {
+    const fallback = 'section';
+    const base = String(text || fallback)
+      .trim()
+      .toLowerCase()
+      .replace(/[^\w\u4e00-\u9fff\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '') || fallback;
+    let id = base;
+    let index = 2;
+
+    while (usedIds.has(id)) {
+      id = `${base}-${index}`;
+      index += 1;
+    }
+
+    usedIds.add(id);
+    return id;
+  }
+
+  function getArticleHeadings() {
+    const article = document.querySelector('#article');
+    if (!article) return [];
+
+    const usedIds = new Set();
+    return [...article.querySelectorAll('h2, h3')]
+      .map(heading => {
+        const element = heading;
+        const text = heading.textContent?.trim() || '';
+        if (!text) return null;
+
+        const existingId = element.id?.trim();
+        const id = existingId && !usedIds.has(existingId)
+          ? existingId
+          : normalizeHeadingId(text, usedIds);
+
+        if (existingId) usedIds.add(existingId);
+        element.id = id;
+
+        return {
+          id,
+          text,
+          level: element.tagName === 'H3' ? 3 : 2,
+          element,
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function closeArticleToc() {
+    const drawer = document.querySelector('#article-toc-drawer');
+    const backdrop = document.querySelector('#article-toc-backdrop');
+    const toggle = document.querySelector('[data-article-action="toggle-toc"]');
+
+    drawer?.classList.remove('is-open');
+    drawer?.setAttribute('aria-hidden', 'true');
+    backdrop?.classList.remove('is-open');
+    toggle?.setAttribute('aria-expanded', 'false');
+
+    window.setTimeout(() => {
+      if (!backdrop?.classList.contains('is-open')) backdrop.hidden = true;
+    }, 220);
+  }
+
+  function openArticleToc() {
+    const drawer = document.querySelector('#article-toc-drawer');
+    const backdrop = document.querySelector('#article-toc-backdrop');
+    const toggle = document.querySelector('[data-article-action="toggle-toc"]');
+    if (!drawer || !backdrop) return;
+
+    backdrop.hidden = false;
+    window.requestAnimationFrame(() => {
+      drawer.classList.add('is-open');
+      drawer.setAttribute('aria-hidden', 'false');
+      backdrop.classList.add('is-open');
+      toggle?.setAttribute('aria-expanded', 'true');
+    });
+  }
+
+  function renderTocList(container, headings) {
+    container.replaceChildren();
+
+    if (!headings.length) {
+      const empty = document.createElement('p');
+      empty.className = 'article-toc-empty';
+      empty.textContent = '这篇文章暂时没有可生成目录的小节。';
+      container.append(empty);
+      return;
+    }
+
+    headings.forEach(heading => {
+      const link = document.createElement('a');
+      link.className = `article-toc-link is-depth-${heading.level}`;
+      link.href = `#${encodeURIComponent(heading.id)}`;
+      link.dataset.headingId = heading.id;
+      link.textContent = heading.text;
+      link.addEventListener('click', event => {
+        event.preventDefault();
+        heading.element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState(null, '', `#${encodeURIComponent(heading.id)}`);
+        closeArticleToc();
+      });
+      container.append(link);
+    });
+  }
+
+  function setActiveTocLink(id) {
+    document.querySelectorAll('.article-toc-link').forEach(link => {
+      const tocLink = link;
+      const isActive = Boolean(id) && tocLink.dataset.headingId === id;
+      tocLink.classList.toggle('is-active', isActive);
+      if (isActive) tocLink.setAttribute('aria-current', 'true');
+      else tocLink.removeAttribute('aria-current');
+    });
+  }
+
+  function updateArticleReadingState() {
+    const root = document.documentElement;
+    const article = document.querySelector('#article');
+    const actions = document.querySelector('#article-actions');
+    const progressBar = document.querySelector('#article-progress-bar');
+    const headings = article ? [...article.querySelectorAll('h2[id], h3[id]')] : [];
+    const scrollTotal = Math.max(root.scrollHeight - root.clientHeight, 1);
+    const scrollPercent = Math.min(Math.max(root.scrollTop / scrollTotal, 0), 1) * 100;
+
+    if (progressBar) progressBar.style.height = `${scrollPercent}%`;
+    actions?.classList.toggle('is-visible', root.scrollTop > 160 || headings.length > 0);
+
+    let activeId = '';
+    headings.forEach(heading => {
+      if (heading.getBoundingClientRect().top <= 120) activeId = heading.id;
+    });
+    setActiveTocLink(activeId);
+  }
+
+  function setupArticleNavigation() {
+    const grid = document.querySelector('.article-reading-grid');
+    const sidebar = document.querySelector('#article-toc-sidebar');
+    const desktopToc = document.querySelector('#article-toc-list');
+    const drawerToc = document.querySelector('#article-toc-drawer-list');
+    const toggle = document.querySelector('[data-article-action="toggle-toc"]');
+    const topButton = document.querySelector('[data-article-action="top"]');
+    const closeButton = document.querySelector('[data-article-action="close-toc"]');
+    const backdrop = document.querySelector('#article-toc-backdrop');
+    const headings = getArticleHeadings();
+
+    grid?.classList.toggle('has-toc', headings.length > 0);
+    if (sidebar) sidebar.hidden = headings.length === 0;
+    if (toggle) toggle.hidden = headings.length === 0;
+    if (desktopToc) renderTocList(desktopToc, headings);
+    if (drawerToc) renderTocList(drawerToc, headings);
+
+    if (toggle && toggle.dataset.bound !== 'true') {
+      toggle.dataset.bound = 'true';
+      toggle.addEventListener('click', () => {
+        const drawer = document.querySelector('#article-toc-drawer');
+        if (drawer?.classList.contains('is-open')) closeArticleToc();
+        else openArticleToc();
+      });
+    }
+
+    if (topButton && topButton.dataset.bound !== 'true') {
+      topButton.dataset.bound = 'true';
+      topButton.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    if (closeButton && closeButton.dataset.bound !== 'true') {
+      closeButton.dataset.bound = 'true';
+      closeButton.addEventListener('click', closeArticleToc);
+    }
+
+    if (backdrop && backdrop.dataset.bound !== 'true') {
+      backdrop.dataset.bound = 'true';
+      backdrop.addEventListener('click', closeArticleToc);
+    }
+
+    const targetId = decodeURIComponent(window.location.hash.slice(1));
+    const target = targetId ? document.getElementById(targetId) : null;
+    if (target) window.setTimeout(() => target.scrollIntoView({ block: 'start' }), 0);
+
+    updateArticleReadingState();
+  }
+
+  let articleScrollTicking = false;
+  function scheduleArticleReadingState() {
+    if (articleScrollTicking) return;
+    articleScrollTicking = true;
+    window.requestAnimationFrame(() => {
+      updateArticleReadingState();
+      articleScrollTicking = false;
+    });
+  }
+
+  function initializeArticleEnhancements() {
+    enhanceCodeBlocks();
+    setupArticleNavigation();
+  }
+
+  if (document.documentElement.dataset.articleEnhancementsBound !== 'true') {
+    document.documentElement.dataset.articleEnhancementsBound = 'true';
+    document.addEventListener('astro:page-load', initializeArticleEnhancements);
+    document.addEventListener('scroll', scheduleArticleReadingState, { passive: true });
+    window.addEventListener('resize', scheduleArticleReadingState);
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeArticleToc();
+    });
+  }
+  initializeArticleEnhancements();
+</script>

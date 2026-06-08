@@ -96,7 +96,6 @@ export async function getPublicPosts(db: Db, options: PublicPostOptions = {}) {
         tags: true,
         category: true,
         featured: true,
-        viewCount: true,
         status: true,
         createdAt: true,
         updatedAt: true

@@ -16,10 +16,18 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Python cache
+__pycache__/
+*.pyc
+
 
 # environment variables
 .env
 .env.production
+
+# local GitHub sync files
+scripts/github_sync_profiles.json
+scripts/github_sync_state.json
 
 # macOS-specific files
 .DS_Store
