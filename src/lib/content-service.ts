@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, like, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, like, ne, or, sql } from 'drizzle-orm';
 import { adPositions, adSlots, comments, posts, siteSettings } from '../db/schema';
 import type { getDb } from './db';
 
@@ -32,6 +32,10 @@ type PublicPostOptions = {
   category?: string;
   includeContent?: boolean;
 };
+
+function escapeLike(value: string) {
+  return value.replace(/[\\%_]/g, match => `\\${match}`);
+}
 
 export function normalizePage(value: string | number | null | undefined) {
   const page = Number(value ?? 1);
@@ -128,6 +132,33 @@ export async function getAllPosts(db: Db, options: { page?: number; pageSize?: n
 export async function getPublicPostBySlug(db: Db, slug: string) {
   const post = await db.query.posts.findFirst({ where: eq(posts.slug, slug) });
   return post?.status === 'published' ? post : undefined;
+}
+
+export async function searchPublicPosts(db: Db, value: string) {
+  const query = value.trim().replace(/\s+/g, ' ').slice(0, 80);
+  if (query.length < 2) return { posts: [], query };
+
+  const pattern = `%${escapeLike(query)}%`;
+  const data = await db.query.posts.findMany({
+    where: and(
+      eq(posts.status, 'published'),
+      or(
+        sql`${posts.title} LIKE ${pattern} ESCAPE '\\'`,
+        sql`${posts.slug} LIKE ${pattern} ESCAPE '\\'`,
+        sql`${posts.description} LIKE ${pattern} ESCAPE '\\'`,
+        sql`${posts.tags} LIKE ${pattern} ESCAPE '\\'`,
+        sql`${posts.category} LIKE ${pattern} ESCAPE '\\'`,
+        sql`${posts.content} LIKE ${pattern} ESCAPE '\\'`
+      )
+    ),
+    columns: {
+      title: true,
+      slug: true
+    },
+    orderBy: (table, { desc }) => desc(table.createdAt)
+  });
+
+  return { posts: data, query };
 }
 
 export async function getPublishedCommentsBySlug(db: Db, slug: string) {

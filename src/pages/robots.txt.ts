@@ -37,7 +37,6 @@ Allow: /
 Disallow: /api/
 Disallow: /admin/
 Disallow: /login/
-Disallow: /search/
 Disallow: /*?*
 Disallow: /rss.xml
 

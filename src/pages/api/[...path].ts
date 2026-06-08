@@ -18,6 +18,7 @@ import {
   normalizePage,
   normalizePageSize,
   publicSettings,
+  searchPublicPosts,
   settingEnabled
 } from '../../lib/content-service';
 import { getDb } from '../../lib/db';
@@ -71,6 +72,7 @@ app.use('*', async (c, next) => {
     (c.req.method === 'GET' && c.req.path === '/api/ads') ||
     (c.req.method === 'GET' && c.req.path === '/api/settings') ||
     (c.req.method === 'GET' && c.req.path === '/api/meta') ||
+    (c.req.method === 'POST' && c.req.path === '/api/search') ||
     (c.req.method === 'GET' && c.req.path.startsWith('/api/related/')) ||
     (c.req.method === 'GET' && c.req.path === '/api/posts' && c.req.query('status') === 'published') ||
     (c.req.method === 'GET' && c.req.path.startsWith('/api/posts/')) ||
@@ -134,6 +136,19 @@ app.get('/posts/:slug', async (c) => {
   const post = await getPublicPostBySlug(db, c.req.param('slug'));
   if (!post) return fail(c, '文章不存在', 404);
   return cachedOk(c, apiCache.publicDetail, '获取文章成功', { post });
+});
+
+app.post('/search', async (c) => {
+  const body = await readJson(c);
+  const query = typeof body?.query === 'string' ? body.query.trim().replace(/\s+/g, ' ') : '';
+
+  c.header('Cache-Control', 'no-store');
+  if (query.length < 2) return fail(c, '请输入至少 2 个字符', 400);
+  if (query.length > 80) return fail(c, '搜索关键词太长', 400);
+
+  const db = getDb(c.env.DB);
+  const data = await searchPublicPosts(db, query);
+  return ok(c, '搜索完成', data);
 });
 
 app.get('/posts/:slug/comments', async (c) => {
