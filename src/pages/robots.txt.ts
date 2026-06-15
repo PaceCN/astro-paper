@@ -2,6 +2,12 @@ import type { APIRoute } from 'astro';
 import { SITE } from '@/config';
 
 const getRobotsTxt = (sitemapURL: URL) => `
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: Google-Display-Ads-Bot
+Allow: /
+
 User-agent: GPTBot
 Disallow: /
 
