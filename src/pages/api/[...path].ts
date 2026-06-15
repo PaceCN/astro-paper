@@ -313,7 +313,8 @@ app.get('/related/:slug', async (c) => {
 
 app.get('/ads', async (c) => {
   const db = getDb(c.env.DB);
-  return cachedOk(c, apiCache.publicShort, '获取广告位成功', { adSlots: await getAdSlots(db) });
+  c.header('Cache-Control', 'no-store');
+  return ok(c, '获取广告位成功', { adSlots: await getAdSlots(db) });
 });
 
 app.put('/ads/:position', async (c) => {
@@ -328,6 +329,7 @@ app.put('/ads/:position', async (c) => {
   const saved = existing
     ? await db.update(adSlots).set({ adCode, isEnabled }).where(eq(adSlots.position, position)).returning()
     : await db.insert(adSlots).values({ position, adCode, isEnabled }).returning();
+  c.header('Cache-Control', 'no-store');
   return ok(c, '广告位更新成功', saved[0]);
 });
 

@@ -1,6 +1,7 @@
 @layer base {
   .app-prose {
-    @apply text-foreground leading-7;
+    @apply max-w-full min-w-0 text-foreground leading-7;
+    overflow-wrap: break-word;
   }
 
   .app-prose h1,
@@ -53,7 +54,7 @@
   }
 
   .app-prose img {
-    @apply mx-auto rounded-2xl border border-border shadow-[var(--shadow)];
+    @apply mx-auto h-auto max-w-full rounded-2xl border border-border shadow-[var(--shadow)];
   }
 
   .app-prose video {
@@ -61,7 +62,7 @@
   }
 
   .app-prose table {
-    @apply w-full border-collapse text-left;
+    @apply block w-full max-w-full overflow-x-auto border-collapse text-left;
   }
 
   .app-prose th,
@@ -74,7 +75,7 @@
   }
 
   .app-prose pre {
-    @apply overflow-x-auto rounded-2xl border border-border bg-muted/50 p-4 focus-visible:border-transparent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-dashed;
+    @apply max-w-full overflow-x-auto rounded-2xl border border-border bg-muted/50 p-4 focus-visible:border-transparent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-dashed;
   }
 
   .app-prose pre code {
@@ -82,7 +83,7 @@
   }
 
   .app-prose .code-block {
-    @apply my-5 overflow-hidden rounded-2xl border border-border bg-card-muted shadow-sm;
+    @apply my-5 max-w-full overflow-hidden rounded-2xl border border-border bg-card-muted shadow-sm;
   }
 
   .app-prose .code-block-header {
@@ -159,6 +160,11 @@
     @apply rounded-2xl border-s-4 border-accent/80 bg-card-muted px-4 py-1 wrap-break-word opacity-90;
   }
 
+  .app-prose :where(p, li, blockquote, th, td) {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
   .astro-code {
     @apply flex border bg-(--shiki-light-bg) text-(--shiki-light) outline-border [&_span]:text-(--shiki-light);
   }
@@ -184,7 +190,11 @@
   }
 
   .article-reading-grid {
-    @apply grid gap-6;
+    @apply grid min-w-0 gap-6;
+  }
+
+  .article-reading-grid > * {
+    min-width: 0;
   }
 
   .article-reading-grid.has-toc {
