@@ -30,6 +30,8 @@ title: "隐私政策"
 
 本站可能接入 Google AdSense 或其他广告、反垃圾评论与安全服务。第三方服务可能会根据其自身隐私政策使用 Cookie、设备标识、访问数据或广告标识，以提供广告投放、频次控制和安全防护等功能。
 
+关于 Google 如何在合作伙伴网站或应用中使用数据，你可以阅读 Google 的 [合作伙伴网站数据使用说明](https://policies.google.com/technologies/partner-sites?hl=zh-CN)。
+
 你可以通过浏览器设置清除或限制 Cookie。但部分功能，例如主题偏好、评论体验或广告个性化控制，可能因此受到影响。
 
 ## 信息用途
